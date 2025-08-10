@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    image: card-inventory:latest
+    container_name: card_inventory_api
+    expose:
+      - "8000"
+    environment:
+      - CARD_INV_DB_URL=sqlite:////data/card_inventory.db
+    volumes:
+      - type: volume
+        source: card_inventory_data
+        target: /data
+    restart: unless-stopped
+    networks:
+      - card_inventory_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: card_inventory_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - card_inventory_network
+
+  certbot:
+    image: certbot/certbot
+    container_name: card_inventory_certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/html --email your-email@example.com --agree-tos --no-eff-email -d your-domain.com
+    networks:
+      - card_inventory_network
+
+volumes:
+  card_inventory_data:
+  certbot-etc:
+  certbot-var:
+
+networks:
+  card_inventory_network:
+    driver: bridge 

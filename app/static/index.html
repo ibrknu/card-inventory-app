@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Card Inventory Scanner</title>
+  <style>
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #0b0c10; color: #eaf0f6; }
+    header { padding: 16px; text-align: center; background: #1f2833; position: sticky; top: 0; z-index: 1; }
+    main { padding: 16px; }
+    .card { background: #14171a; border-radius: 12px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.35); margin-bottom: 16px; }
+    .grid { display: grid; gap: 12px; }
+    video { width: 100%; max-height: 48vh; background: #000; border-radius: 10px; border: 2px solid #333; }
+    video.testing { border: 2px solid #45a29e; background: #1a1a1a; box-shadow: 0 0 10px rgba(69, 162, 158, 0.5); }
+    video.error { border: 2px solid #e74c3c; background: #2a1a1a; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
+    video:not([srcObject]) { background: #1a1a1a; border: 2px dashed #666; }
+    button { font-size: 16px; padding: 10px 16px; border: none; border-radius: 10px; background: #45a29e; color: #0b0c10; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #c5c6c7; color: #0b0c10; }
+    button.danger { background: #e74c3c; color: white; }
+    button.success { background: #27ae60; color: white; }
+    input[type="text"], input[type="number"], textarea, select { width: 100%; padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #334; background: #0f1113; color: #eaf0f6; margin-bottom: 8px; }
+    textarea { resize: vertical; min-height: 80px; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .toast { margin-top: 8px; padding: 10px; border-radius: 8px; background: #173f2a; color: #b7ffd8; display: none; }
+    .error { background: #3f1717; color: #ffb7b7; }
+    .warning { background: #3f2f17; color: #ffd7b7; }
+    .muted { color: #9aa5b1; font-size: 14px; }
+    .small { font-size: 12px; }
+    a { color: #66fcf1; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 4px; font-weight: 600; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
+    .modal-content { position: relative; background: #14171a; margin: 20px auto; padding: 20px; border-radius: 12px; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .close { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #9aa5b1; }
+    .close:hover { color: #eaf0f6; }
+    .hidden { display: none; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-1 { flex: 1; }
+    .gap-2 { gap: 8px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-4 { margin-bottom: 16px; }
+  </style>
+  <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+</head>
+<body>
+  <header>
+    <h2>Card Inventory</h2>
+  </header>
+  <main class="grid">
+    <section class="card">
+      <div class="grid">
+        <video id="video" playsinline autoplay muted></video>
+        <div class="row">
+          <button id="startBtn">Start Scanning</button>
+          <button id="stopBtn" class="secondary">Stop Scanner</button>
+          <button id="stopVideoBtn" class="secondary">Stop Video</button>
+          <button id="permissionBtn" class="secondary">Request Camera Permission</button>
+          <button id="testVideoBtn" class="secondary">Test Video</button>
+          <button id="testBarcodeBtn" class="secondary">Test Barcode</button>
+          <button id="debugToggleBtn" class="secondary">Debug Info</button>
+        </div>
+        <div class="muted small">
+          <strong>iPhone Camera Issues?</strong><br>
+          • Use Safari (not Chrome)<br>
+          • Go to Settings → Privacy → Camera → Safari<br>
+          • Try adding to Home Screen<br>
+          • Use manual entry below as backup
+        </div>
+        <div id="debugInfo" class="muted small" style="display: none;">
+          <strong>Debug Info:</strong><br>
+          <span id="cameraStatus">Camera: Unknown</span><br>
+          <span id="videoStatus">Video: Unknown</span><br>
+          <span id="scannerStatus">Scanner: Unknown</span>
+        </div>
+        <div id="toast" class="toast"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Manual Entry</h3>
+      <div class="row">
+        <input type="text" id="manualBarcode" placeholder="Enter barcode (UPC/EAN)" inputmode="numeric" />
+        <button id="manualBtn">Add</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Tips</h3>
+      <ul>
+        <li>Add this page to Home Screen in Safari.</li>
+        <li>Good lighting improves scan reliability.</li>
+        <li>Use landscape if autofocus struggles.</li>
+        <li>New items will prompt for additional details.</li>
+      </ul>
+      <div class="small muted">API: <a href="/docs">Swagger</a></div>
+    </section>
+  </main>
+
+  <!-- New Item Modal -->
+  <div id="newItemModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeNewItemModal()">&times;</span>
+      <h3>Add New Item</h3>
+      <p class="muted">Barcode: <span id="newItemBarcode"></span></p>
+      
+      <form id="newItemForm">
+        <div class="form-group">
+          <label for="itemName">Name</label>
+          <input type="text" id="itemName" placeholder="Card name">
+        </div>
+        
+        <div class="form-group">
+          <label for="itemGame">Game</label>
+          <select id="itemGame">
+            <option value="">Select game...</option>
+            <option value="Pokémon">Pokémon</option>
+            <option value="Magic: The Gathering">Magic: The Gathering</option>
+            <option value="Yu-Gi-Oh!">Yu-Gi-Oh!</option>
+            <option value="NFL">NFL</option>
+            <option value="NBA">NBA</option>
+            <option value="MLB">MLB</option>
+            <option value="WNBA">WNBA</option>
+            <option value="Hockey">Hockey</option>
+            <option value="College">College</option>
+            <option value="MMA">MMA</option>
+            <option value="Soccer">Soccer</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        
+        <div class="flex gap-2">
+          <div class="form-group flex-1">
+            <label for="itemSet">Set</label>
+            <input type="text" id="itemSet" placeholder="Set name">
+          </div>
+          <div class="form-group flex-1">
+            <label for="itemNumber">Number</label>
+            <input type="text" id="itemNumber" placeholder="Card number">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="itemQuantity">Quantity</label>
+          <input type="number" id="itemQuantity" value="1" min="1">
+        </div>
+        
+        <div class="form-group">
+          <label for="itemPrice">Price ($)</label>
+          <input type="number" id="itemPrice" step="0.01" min="0" placeholder="0.00">
+        </div>
+        
+        <div class="form-group">
+          <label for="itemLocation">Location</label>
+          <input type="text" id="itemLocation" placeholder="Binder, box, etc.">
+        </div>
+        
+        <div class="form-group">
+          <label for="itemDescription">Description</label>
+          <textarea id="itemDescription" placeholder="Additional details about the card..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="itemNotes">Notes</label>
+          <textarea id="itemNotes" placeholder="Personal notes..."></textarea>
+        </div>
+        
+        <div class="flex gap-2">
+          <button type="submit" class="success">Add Item</button>
+          <button type="button" class="secondary" onclick="closeNewItemModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const stopVideoBtn = document.getElementById('stopVideoBtn');
+    const permissionBtn = document.getElementById('permissionBtn');
+    const testVideoBtn = document.getElementById('testVideoBtn');
+    const testBarcodeBtn = document.getElementById('testBarcodeBtn');
+    const debugToggleBtn = document.getElementById('debugToggleBtn');
+    const video = document.getElementById('video');
+    const toast = document.getElementById('toast');
+    const manualInput = document.getElementById('manualBarcode');
+    const manualBtn = document.getElementById('manualBtn');
+    const newItemModal = document.getElementById('newItemModal');
+    const newItemForm = document.getElementById('newItemForm');
+    const newItemBarcode = document.getElementById('newItemBarcode');
+
+    let codeReader = null;
+    let currentStream = null;
+    let lastText = '';
+    let lastAt = 0;
+    let pendingBarcode = null;
+    let debugVisible = false;
+
+    // Detect iOS device
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    // Check if camera API is supported
+    const isCameraSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || 
+                              !!(navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    
+    // Check if we're on HTTPS (required for camera access)
+    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // Test ZXing library on page load
+    function testZXingLibrary() {
+      console.log('Testing ZXing library...');
+      if (typeof ZXing === 'undefined') {
+        console.error('ZXing library not loaded');
+        showToast('Barcode library not loaded!', 'error');
+        return false;
+      }
+      
+      if (typeof ZXing.BrowserMultiFormatReader === 'undefined') {
+        console.error('BrowserMultiFormatReader not available');
+        showToast('Barcode reader not available!', 'error');
+        return false;
+      }
+      
+      console.log('ZXing library loaded successfully');
+      console.log('Available ZXing classes:', Object.keys(ZXing));
+      return true;
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Page loaded, initializing...');
+      
+      // Test ZXing library
+      if (!testZXingLibrary()) {
+        return;
+      }
+      
+      // Check browser compatibility
+      console.log('Browser compatibility check:');
+      console.log('- User Agent:', navigator.userAgent);
+      console.log('- Camera API supported:', isCameraSupported);
+      console.log('- Secure context:', isSecure);
+      console.log('- iOS device:', isIOS);
+      console.log('- navigator.mediaDevices:', !!navigator.mediaDevices);
+      if (navigator.mediaDevices) {
+        console.log('- getUserMedia supported:', !!navigator.mediaDevices.getUserMedia);
+      }
+      
+      // Check camera support and show/hide buttons accordingly
+      if (!isCameraSupported) {
+        console.log('Camera API not supported');
+        showToast('Camera not supported in this browser. Use manual entry.', 'warning');
+        // Hide camera-related buttons
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('permissionBtn').style.display = 'none';
+        document.getElementById('testVideoBtn').style.display = 'none';
+      }
+      
+      if (!isSecure) {
+        console.log('Not on HTTPS - camera access may be limited');
+        showToast('Camera access requires HTTPS. Use manual entry or access via your computer\'s IP address.', 'warning');
+      }
+    });
+
+    function isScannerRunning() {
+      return codeReader && codeReader.isScanning !== false;
+    }
+    
+    function updateDebugInfo() {
+      const debugInfo = document.getElementById('debugInfo');
+      const cameraStatus = document.getElementById('cameraStatus');
+      const videoStatus = document.getElementById('videoStatus');
+      const scannerStatus = document.getElementById('scannerStatus');
+      
+      if (debugVisible) {
+        debugInfo.style.display = 'block';
+        cameraStatus.textContent = `Camera: ${currentStream ? 'Active' : 'Inactive'}`;
+        videoStatus.textContent = `Video: ${video.srcObject ? 'Streaming' : 'No Stream'} (${video.videoWidth}x${video.videoHeight})`;
+        scannerStatus.textContent = `Scanner: ${isScannerRunning() ? 'Running' : 'Stopped'}`;
+        
+        // Add more detailed info
+        if (video.srcObject) {
+          const tracks = currentStream?.getVideoTracks();
+          if (tracks && tracks.length > 0) {
+            const track = tracks[0];
+            const settings = track.getSettings();
+            console.log('Video track settings:', settings);
+          }
+        }
+      } else {
+        debugInfo.style.display = 'none';
+      }
+    }
+
+    function toggleDebug() {
+      debugVisible = !debugVisible;
+      updateDebugInfo();
+      debugToggleBtn.textContent = debugVisible ? 'Hide Debug' : 'Debug Info';
+    }
+
+    // Polyfill for older browsers
+    function getUserMediaPolyfill(constraints) {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        return navigator.mediaDevices.getUserMedia(constraints);
+      }
+      
+      // Fallback for older browsers
+      const getUserMedia = navigator.getUserMedia || 
+                          navigator.webkitGetUserMedia || 
+                          navigator.mozGetUserMedia || 
+                          navigator.msGetUserMedia;
+      
+      if (!getUserMedia) {
+        return Promise.reject(new Error('getUserMedia not supported'));
+      }
+      
+      return new Promise((resolve, reject) => {
+        getUserMedia.call(navigator, constraints, resolve, reject);
+      });
+    }
+
+    function showToast(msg, type='success') {
+      toast.textContent = msg;
+      toast.className = `toast ${type}`;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    function showNewItemModal(barcode) {
+      pendingBarcode = barcode;
+      newItemBarcode.textContent = barcode;
+      newItemModal.style.display = 'block';
+      document.getElementById('itemName').focus();
+    }
+
+    function closeNewItemModal() {
+      newItemModal.style.display = 'none';
+      pendingBarcode = null;
+      newItemForm.reset();
+    }
+
+    async function postScan(barcode) {
+      try {
+        const res = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ barcode, increment: 1 })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const result = await res.json();
+        
+        if (result.is_new) {
+          showToast(`New barcode detected: ${barcode}`, 'warning');
+          showNewItemModal(barcode);
+        } else {
+          showToast(`Added: ${result.item.name || result.item.barcode} (qty ${result.item.quantity})`);
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Error adding item', 'error');
+      }
+    }
+
+    async function createNewItem(formData) {
+      try {
+        console.log('Submitting form data:', formData);
+        
+        const res = await fetch('/api/items/new', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Server error:', errorData);
+          throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+        }
+        
+        const item = await res.json();
+        showToast(`Added: ${item.name} (qty ${item.quantity})`);
+        closeNewItemModal();
+      } catch (e) {
+        console.error('Error creating item:', e);
+        showToast(`Error: ${e.message}`, 'error');
+      }
+    }
+
+    async function testVideo() {
+      try {
+        console.log('Testing video element...');
+        showToast('Testing video...', 'warning');
+        
+        // Only stop scanner if it's actually running
+        if (codeReader && codeReader.isScanning) {
+          console.log('Stopping existing scanner for video test...');
+          await stopScanning();
+        }
+        
+        const stream = await getUserMediaPolyfill({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 30, min: 15 }
+          } 
+        });
+        
+        video.srcObject = stream;
+        currentStream = stream;
+        
+        // Make video visible and add visual feedback
+        video.style.display = 'block';
+        video.classList.add('testing');
+        video.classList.remove('error');
+        
+        // Wait for video to be ready
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            console.log('Video metadata loaded');
+            video.play().then(() => {
+              showToast('Video test successful! Ready for scanning.', 'success');
+              console.log('Video test successful');
+              updateDebugInfo();
+              resolve();
+            }).catch(resolve);
+          };
+          video.onerror = (e) => {
+            console.error('Video error:', e);
+            video.classList.add('error');
+            video.classList.remove('testing');
+            showToast('Video error: ' + e.message, 'error');
+            resolve();
+          };
+        });
+        
+      } catch (error) {
+        console.error('Video test failed:', error);
+        video.classList.add('error');
+        video.classList.remove('testing');
+        showToast('Video test failed: ' + error.message, 'error');
+      }
+    }
+
+    async function testBarcode() {
+      // Simulate a successful barcode scan without affecting video
+      const testBarcode = '1234567890123';
+      console.log('Testing barcode scan with:', testBarcode);
+      showToast('Testing barcode scan...', 'warning');
+      
+      // Simulate the scan result
+      setTimeout(() => {
+        postScan(testBarcode);
+        showToast('Test barcode scan successful!', 'success');
+      }, 1000);
+    }
+
+    async function requestCameraPermission() {
+      if (!isCameraSupported) {
+        showToast('Camera not supported in this browser. Use manual entry.', 'error');
+        return;
+      }
+
+      console.log('Requesting camera permission...');
+      console.log('Available APIs:', {
+        mediaDevices: !!navigator.mediaDevices,
+        getUserMedia: !!navigator.getUserMedia,
+        webkitGetUserMedia: !!navigator.webkitGetUserMedia,
+        mozGetUserMedia: !!navigator.mozGetUserMedia,
+        msGetUserMedia: !!navigator.msGetUserMedia
+      });
+
+      try {
+        showToast('Requesting camera permission...', 'warning');
+        
+        const stream = await getUserMediaPolyfill({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
+        video.srcObject = stream;
+        currentStream = stream;
+        showToast('Camera permission granted!', 'success');
+        
+        // Stop the stream after permission is granted
+        setTimeout(() => {
+          if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+            video.srcObject = null;
+          }
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Camera permission error:', error);
+        if (error.name === 'NotAllowedError') {
+          showToast('Camera access denied. Please enable in Settings → Privacy → Camera → Safari', 'error');
+        } else if (error.name === 'NotFoundError') {
+          showToast('No camera found on this device', 'error');
+        } else {
+          showToast(`Camera error: ${error.message}`, 'error');
+        }
+      }
+    }
+
+    async function startScanning() {
+      if (codeReader) {
+        showToast('Scanner already running!', 'warning');
+        return;
+      }
+      
+      if (!isCameraSupported) {
+        showToast('Camera not supported in this browser. Use manual entry.', 'error');
+        return;
+      }
+      
+      // Check if ZXing library is loaded
+      if (typeof ZXing === 'undefined') {
+        showToast('Barcode library not loaded. Please refresh the page.', 'error');
+        console.error('ZXing library not available');
+        return;
+      }
+      
+      if (typeof ZXing.BrowserMultiFormatReader === 'undefined') {
+        showToast('Barcode reader not available. Please refresh the page.', 'error');
+        console.error('BrowserMultiFormatReader not available');
+        return;
+      }
+
+      try {
+        console.log('Starting scanning process...');
+        showToast('Starting scanner...', 'warning');
+        
+        // Check if we already have a video stream
+        if (!video.srcObject || !currentStream) {
+          showToast('Please test video first, then start scanning.', 'error');
+          return;
+        }
+        
+        // Initialize the barcode reader
+        console.log('Initializing barcode reader...');
+        codeReader = new ZXing.BrowserMultiFormatReader();
+        
+        // Start decoding from the existing video element
+        console.log('Starting barcode decoding from video element...');
+        console.log('Video element:', video);
+        console.log('Video srcObject:', video.srcObject);
+        console.log('Video readyState:', video.readyState);
+        console.log('Video videoWidth:', video.videoWidth);
+        console.log('Video videoHeight:', video.videoHeight);
+        
+        codeReader.decodeFromVideoElement(video, (result, err, controls) => {
+          console.log('Scanner callback - result:', result, 'error:', err);
+          
+          if (result) {
+            const text = result.getText();
+            console.log('Barcode detected:', text);
+            const now = Date.now();
+            // Deduplicate rapid repeats
+            if (text && (text !== lastText || now - lastAt > 1500)) {
+              lastText = text; 
+              lastAt = now;
+              postScan(text);
+            }
+          }
+          if (err && err.name !== 'NotFoundException') {
+            console.log('Scanning error:', err);
+            console.log('Error details:', {
+              name: err.name,
+              message: err.message,
+              stack: err.stack
+            });
+          }
+        });
+        
+        showToast('Scanner started successfully!', 'success');
+        console.log('Scanning started successfully');
+        updateDebugInfo();
+        
+      } catch (e) {
+        console.error('Scanning start failed:', e);
+        showToast('Failed to start scanning: ' + e.message, 'error');
+      }
+    }
+
+    async function stopScanning() {
+      if (codeReader) {
+        try {
+          await codeReader.reset();
+          codeReader = null;
+          showToast('Scanner stopped');
+          console.log('Scanner stopped');
+          updateDebugInfo();
+        } catch (e) {
+          console.error('Error stopping scanner:', e);
+        }
+      }
+    }
+    
+    async function stopVideo() {
+      if (currentStream) {
+        try {
+          currentStream.getTracks().forEach(track => track.stop());
+          currentStream = null;
+          video.srcObject = null;
+          video.style.display = 'none';
+          video.classList.remove('testing', 'error');
+          showToast('Video stopped');
+          console.log('Video stopped');
+          updateDebugInfo();
+        } catch (e) {
+          console.error('Error stopping video:', e);
+        }
+      }
+    }
+
+    startBtn.addEventListener('click', startScanning);
+    stopBtn.addEventListener('click', stopScanning);
+    stopVideoBtn.addEventListener('click', stopVideo);
+    permissionBtn.addEventListener('click', requestCameraPermission);
+    testVideoBtn.addEventListener('click', testVideo);
+    testBarcodeBtn.addEventListener('click', testBarcode);
+    debugToggleBtn.addEventListener('click', toggleDebug);
+    
+    manualBtn.addEventListener('click', () => {
+      const val = (manualInput.value || '').trim();
+      if (!val) return showToast('Enter a barcode', 'error');
+      postScan(val);
+      manualInput.value = '';
+    });
+
+    newItemForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const itemNameInput = document.getElementById('itemName');
+      const itemName = itemNameInput.value.trim();
+      const itemGame = document.getElementById('itemGame').value || null;
+      const itemSet = document.getElementById('itemSet').value || null;
+      const itemNumber = document.getElementById('itemNumber').value || null;
+      const itemQuantity = parseInt(document.getElementById('itemQuantity').value) || 1;
+      const itemPrice = parseFloat(document.getElementById('itemPrice').value) || null;
+      const itemLocation = document.getElementById('itemLocation').value || null;
+      const itemDescription = document.getElementById('itemDescription').value || null;
+      const itemNotes = document.getElementById('itemNotes').value || null;
+
+      if (!itemName) {
+        showToast('Item name cannot be empty.', 'error');
+        return;
+      }
+
+      if (!pendingBarcode) {
+        showToast('No barcode found. Please scan again.', 'error');
+        return;
+      }
+
+      const formData = {
+        barcode: pendingBarcode,
+        name: itemName,
+        game: itemGame,
+        set_name: itemSet,
+        number_in_set: itemNumber,
+        quantity: itemQuantity,
+        location: itemLocation,
+        notes: itemNotes,
+        price: itemPrice,
+        description: itemDescription,
+      };
+      
+      await createNewItem(formData);
+    });
+
+    // Close modal when clicking outside
+    newItemModal.addEventListener('click', (e) => {
+      if (e.target === newItemModal) {
+        closeNewItemModal();
+      }
+    });
+  </script>
+</body>
+</html>

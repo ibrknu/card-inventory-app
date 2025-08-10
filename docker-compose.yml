@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    image: card-inventory:latest
+    container_name: card_inventory_api
+    ports:
+      - "8000:8000"
+    environment:
+      - CARD_INV_DB_URL=sqlite:////data/card_inventory.db
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: card_inventory_data
+        target: /data
+    restart: unless-stopped
+volumes:
+  card_inventory_data:
