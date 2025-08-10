@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Text, UniqueConstraint, Numeric
 from sqlalchemy.orm import validates
 
@@ -23,8 +23,8 @@ class Item(Base):
     price = Column(Numeric(10, 2), nullable=True)
     description = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     @validates("quantity")
     def validate_quantity(self, _key, value):  # noqa: D401
@@ -40,4 +40,4 @@ class ScanEvent(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     barcode = Column(String(64), nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

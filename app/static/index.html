@@ -5,23 +5,153 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Card Inventory Scanner</title>
   <style>
-    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #0b0c10; color: #eaf0f6; }
-    header { padding: 16px; text-align: center; background: #1f2833; position: sticky; top: 0; z-index: 1; }
-    main { padding: 16px; }
-    .card { background: #14171a; border-radius: 12px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.35); margin-bottom: 16px; }
-    .grid { display: grid; gap: 12px; }
-    video { width: 100%; max-height: 48vh; background: #000; border-radius: 10px; border: 2px solid #333; }
+    body { 
+      font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background: #0b0c10; 
+      color: #eaf0f6; 
+      min-height: 100vh;
+    }
+    
+    header { 
+      padding: 12px 16px; 
+      text-align: center; 
+      background: #1f2833; 
+      position: sticky; 
+      top: 0; 
+      z-index: 1; 
+    }
+    
+    header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    
+    main { 
+      padding: 12px; 
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    
+    @media (min-width: 768px) {
+      main {
+        padding: 16px;
+        max-width: 600px;
+      }
+      
+      header h2 {
+        font-size: 2rem;
+      }
+    }
+    
+    .card { 
+      background: #14171a; 
+      border-radius: 12px; 
+      padding: 16px; 
+      box-shadow: 0 2px 12px rgba(0,0,0,.35); 
+      margin-bottom: 16px; 
+    }
+    
+    .grid { 
+      display: grid; 
+      gap: 12px; 
+    }
+    
+    video { 
+      width: 100%; 
+      max-height: 40vh; 
+      background: #000; 
+      border-radius: 10px; 
+      border: 2px solid #333; 
+    }
+    
+    @media (max-width: 767px) {
+      video {
+        max-height: 35vh;
+      }
+    }
     video.testing { border: 2px solid #45a29e; background: #1a1a1a; box-shadow: 0 0 10px rgba(69, 162, 158, 0.5); }
     video.error { border: 2px solid #e74c3c; background: #2a1a1a; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
     video:not([srcObject]) { background: #1a1a1a; border: 2px dashed #666; }
-    button { font-size: 16px; padding: 10px 16px; border: none; border-radius: 10px; background: #45a29e; color: #0b0c10; font-weight: 700; cursor: pointer; }
+    button { 
+      font-size: 16px; 
+      padding: 12px 16px; 
+      border: none; 
+      border-radius: 10px; 
+      background: #45a29e; 
+      color: #0b0c10; 
+      font-weight: 700; 
+      cursor: pointer; 
+      min-height: 44px; /* iOS touch target minimum */
+      touch-action: manipulation;
+    }
+    
     button.secondary { background: #c5c6c7; color: #0b0c10; }
     button.danger { background: #e74c3c; color: white; }
     button.success { background: #27ae60; color: white; }
-    input[type="text"], input[type="number"], textarea, select { width: 100%; padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #334; background: #0f1113; color: #eaf0f6; margin-bottom: 8px; }
-    textarea { resize: vertical; min-height: 80px; }
-    .row { display: flex; gap: 8px; align-items: center; }
-    .toast { margin-top: 8px; padding: 10px; border-radius: 8px; background: #173f2a; color: #b7ffd8; display: none; }
+    
+    /* Mobile button grid */
+    .button-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr;
+    }
+    
+    @media (min-width: 480px) {
+      .button-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    
+    @media (min-width: 768px) {
+      .button-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+      }
+    }
+    input[type="text"], input[type="number"], textarea, select { 
+      width: 100%; 
+      padding: 12px; 
+      font-size: 16px; 
+      border-radius: 8px; 
+      border: 1px solid #334; 
+      background: #0f1113; 
+      color: #eaf0f6; 
+      margin-bottom: 12px; 
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      border-radius: 8px;
+    }
+    
+    textarea { 
+      resize: vertical; 
+      min-height: 80px; 
+    }
+    
+    select {
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+    
+    .row { 
+      display: flex; 
+      gap: 8px; 
+      align-items: center; 
+    }
+    
+    .toast { 
+      margin-top: 8px; 
+      padding: 12px; 
+      border-radius: 8px; 
+      background: #173f2a; 
+      color: #b7ffd8; 
+      display: none; 
+      font-size: 14px;
+    }
     .error { background: #3f1717; color: #ffb7b7; }
     .warning { background: #3f2f17; color: #ffd7b7; }
     .muted { color: #9aa5b1; font-size: 14px; }
@@ -30,8 +160,38 @@
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; margin-bottom: 4px; font-weight: 600; }
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
-    .modal-content { position: relative; background: #14171a; margin: 20px auto; padding: 20px; border-radius: 12px; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-    .close { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #9aa5b1; }
+    .modal-content { 
+      position: relative; 
+      background: #14171a; 
+      margin: 10px; 
+      padding: 20px; 
+      border-radius: 12px; 
+      max-width: 500px; 
+      max-height: 90vh; 
+      overflow-y: auto; 
+    }
+    
+    @media (min-width: 768px) {
+      .modal-content {
+        margin: 20px auto;
+      }
+    }
+    
+    .close { 
+      position: absolute; 
+      top: 10px; 
+      right: 15px; 
+      font-size: 24px; 
+      cursor: pointer; 
+      color: #9aa5b1; 
+      padding: 8px;
+      min-height: 44px;
+      min-width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
     .close:hover { color: #eaf0f6; }
     .hidden { display: none; }
     .flex { display: flex; }
@@ -42,6 +202,17 @@
     .mb-4 { margin-bottom: 16px; }
   </style>
   <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+  <script>
+    // Fallback ZXing library if the main one fails to load
+    if (typeof ZXing === 'undefined') {
+      console.log('Primary ZXing library failed to load, trying fallback...');
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@zxing/library@0.19.6';
+      script.onload = () => console.log('Fallback ZXing library loaded successfully');
+      script.onerror = () => console.error('All ZXing library versions failed to load');
+      document.head.appendChild(script);
+    }
+  </script>
 </head>
 <body>
   <header>
@@ -51,13 +222,19 @@
     <section class="card">
       <div class="grid">
         <video id="video" playsinline autoplay muted></video>
-        <div class="row">
+        <div class="button-grid">
           <button id="startBtn">Start Scanning</button>
           <button id="stopBtn" class="secondary">Stop Scanner</button>
           <button id="stopVideoBtn" class="secondary">Stop Video</button>
+          <button id="restartVideoBtn" class="secondary">Restart Video</button>
+          <button id="recoverVideoBtn" class="secondary">Recover Video</button>
           <button id="permissionBtn" class="secondary">Request Camera Permission</button>
           <button id="testVideoBtn" class="secondary">Test Video</button>
           <button id="testBarcodeBtn" class="secondary">Test Barcode</button>
+        <button id="generateTestBarcodeBtn" class="secondary">Generate Test Barcode</button>
+          <button id="captureBtn" class="secondary">Capture & Decode</button>
+          <button id="exportFramesBtn" class="secondary">Export Failed Frames</button>
+          <button id="exportStatsBtn" class="secondary">Export All Stats</button>
           <button id="debugToggleBtn" class="secondary">Debug Info</button>
         </div>
         <div class="muted small">
@@ -71,7 +248,9 @@
           <strong>Debug Info:</strong><br>
           <span id="cameraStatus">Camera: Unknown</span><br>
           <span id="videoStatus">Video: Unknown</span><br>
-          <span id="scannerStatus">Scanner: Unknown</span>
+          <span id="scannerStatus">Scanner: Unknown</span><br>
+          <span id="frameStats">Frame Stats: Unknown</span><br>
+          <span id="qualityStats">Quality: Unknown</span>
         </div>
         <div id="toast" class="toast"></div>
       </div>
@@ -79,8 +258,10 @@
 
     <section class="card">
       <h3>Manual Entry</h3>
-      <div class="row">
+      <div class="form-group">
         <input type="text" id="manualBarcode" placeholder="Enter barcode (UPC/EAN)" inputmode="numeric" />
+      </div>
+      <div class="form-group">
         <button id="manualBtn">Add</button>
       </div>
     </section>
@@ -129,15 +310,13 @@
           </select>
         </div>
         
-        <div class="flex gap-2">
-          <div class="form-group flex-1">
-            <label for="itemSet">Set</label>
-            <input type="text" id="itemSet" placeholder="Set name">
-          </div>
-          <div class="form-group flex-1">
-            <label for="itemNumber">Number</label>
-            <input type="text" id="itemNumber" placeholder="Card number">
-          </div>
+        <div class="form-group">
+          <label for="itemSet">Set</label>
+          <input type="text" id="itemSet" placeholder="Set name">
+        </div>
+        <div class="form-group">
+          <label for="itemNumber">Number</label>
+          <input type="text" id="itemNumber" placeholder="Card number">
         </div>
         
         <div class="form-group">
@@ -165,8 +344,10 @@
           <textarea id="itemNotes" placeholder="Personal notes..."></textarea>
         </div>
         
-        <div class="flex gap-2">
+        <div class="form-group">
           <button type="submit" class="success">Add Item</button>
+        </div>
+        <div class="form-group">
           <button type="button" class="secondary" onclick="closeNewItemModal()">Cancel</button>
         </div>
       </form>
@@ -177,9 +358,15 @@
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
     const stopVideoBtn = document.getElementById('stopVideoBtn');
+    const restartVideoBtn = document.getElementById('restartVideoBtn');
+    const recoverVideoBtn = document.getElementById('recoverVideoBtn');
     const permissionBtn = document.getElementById('permissionBtn');
     const testVideoBtn = document.getElementById('testVideoBtn');
     const testBarcodeBtn = document.getElementById('testBarcodeBtn');
+    const generateTestBarcodeBtn = document.getElementById('generateTestBarcodeBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const exportFramesBtn = document.getElementById('exportFramesBtn');
+    const exportStatsBtn = document.getElementById('exportStatsBtn');
     const debugToggleBtn = document.getElementById('debugToggleBtn');
     const video = document.getElementById('video');
     const toast = document.getElementById('toast');
@@ -195,6 +382,17 @@
     let lastAt = 0;
     let pendingBarcode = null;
     let debugVisible = false;
+    
+    // Frame data tracking
+    let frameStats = {
+      totalFrames: 0,
+      successfulScans: 0,
+      failedScans: 0,
+      startTime: null,
+      lastScanTime: null,
+      frameQuality: [],
+      failedFrames: []
+    };
 
     // Detect iOS device
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -205,6 +403,133 @@
     
     // Check if we're on HTTPS (required for camera access)
     const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // Frame quality analysis functions
+    function analyzeFrameQuality(canvas) {
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      let totalBrightness = 0;
+      let totalContrast = 0;
+      
+      // Calculate brightness and contrast
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const brightness = (r + g + b) / 3;
+        totalBrightness += brightness;
+      }
+      
+      const avgBrightness = totalBrightness / (data.length / 4);
+      
+      // Calculate contrast (standard deviation of brightness)
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const brightness = (r + g + b) / 3;
+        totalContrast += Math.pow(brightness - avgBrightness, 2);
+      }
+      
+      const contrast = Math.sqrt(totalContrast / (data.length / 4));
+      
+      // Simple blur detection (edge detection)
+      let edgeCount = 0;
+      for (let y = 1; y < canvas.height - 1; y++) {
+        for (let x = 1; x < canvas.width - 1; x++) {
+          const idx = (y * canvas.width + x) * 4;
+          const center = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+          const right = (data[idx + 4] + data[idx + 5] + data[idx + 6]) / 3;
+          const down = (data[idx + canvas.width * 4] + data[idx + canvas.width * 4 + 1] + data[idx + canvas.width * 4 + 2]) / 3;
+          
+          const edgeX = Math.abs(center - right);
+          const edgeY = Math.abs(center - down);
+          
+          if (edgeX > 30 || edgeY > 30) {
+            edgeCount++;
+          }
+        }
+      }
+      
+      const blurScore = 1 - (edgeCount / (canvas.width * canvas.height));
+      
+      return {
+        brightness: Math.round(avgBrightness),
+        contrast: Math.round(contrast),
+        blurScore: Math.round(blurScore * 100) / 100,
+        timestamp: Date.now(),
+        dimensions: `${canvas.width}x${canvas.height}`
+      };
+    }
+    
+    function saveFailedFrame(canvas, quality, error) {
+      const frameData = {
+        quality: quality,
+        error: error,
+        timestamp: Date.now(),
+        dataUrl: canvas.toDataURL('image/jpeg', 0.8)
+      };
+      
+      frameStats.failedFrames.push(frameData);
+      
+      // Keep only last 10 failed frames to prevent memory issues
+      if (frameStats.failedFrames.length > 10) {
+        frameStats.failedFrames.shift();
+      }
+    }
+    
+    function exportFailedFrames() {
+      if (frameStats.failedFrames.length === 0) {
+        showToast('No failed frames to export', 'warning');
+        return;
+      }
+      
+      const exportData = {
+        summary: {
+          totalFailed: frameStats.failedFrames.length,
+          timeRange: `${new Date(frameStats.failedFrames[0].timestamp).toLocaleTimeString()} - ${new Date(frameStats.failedFrames[frameStats.failedFrames.length - 1].timestamp).toLocaleTimeString()}`,
+          exportTime: new Date().toISOString()
+        },
+        frames: frameStats.failedFrames
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `failed-frames-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showToast(`Exported ${frameStats.failedFrames.length} failed frames`, 'success');
+    }
+    
+    function exportFrameStats() {
+      const exportData = {
+        summary: {
+          totalFrames: frameStats.totalFrames,
+          successfulScans: frameStats.successfulScans,
+          failedScans: frameStats.failedScans,
+          startTime: frameStats.startTime ? new Date(frameStats.startTime).toISOString() : null,
+          lastScanTime: frameStats.lastScanTime ? new Date(frameStats.lastScanTime).toISOString() : null,
+          exportTime: new Date().toISOString()
+        },
+        frameQuality: frameStats.frameQuality,
+        failedFrames: frameStats.failedFrames
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `frame-stats-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showToast(`Exported complete frame statistics`, 'success');
+    }
     
     // Test ZXing library on page load
     function testZXingLibrary() {
@@ -221,9 +546,18 @@
         return false;
       }
       
-      console.log('ZXing library loaded successfully');
-      console.log('Available ZXing classes:', Object.keys(ZXing));
-      return true;
+      // Test if we can create an instance
+      try {
+        const testReader = new ZXing.BrowserMultiFormatReader();
+        console.log('ZXing library loaded successfully');
+        console.log('Available ZXing classes:', Object.keys(ZXing));
+        console.log('BrowserMultiFormatReader methods:', Object.getOwnPropertyNames(testReader));
+        return true;
+      } catch (e) {
+        console.error('Failed to create BrowserMultiFormatReader instance:', e);
+        showToast('Barcode reader initialization failed!', 'error');
+        return false;
+      }
     }
 
     // Initialize on page load
@@ -271,12 +605,33 @@
       const cameraStatus = document.getElementById('cameraStatus');
       const videoStatus = document.getElementById('videoStatus');
       const scannerStatus = document.getElementById('scannerStatus');
+      const frameStatsElement = document.getElementById('frameStats');
+      const qualityStatsElement = document.getElementById('qualityStats');
       
       if (debugVisible) {
         debugInfo.style.display = 'block';
         cameraStatus.textContent = `Camera: ${currentStream ? 'Active' : 'Inactive'}`;
         videoStatus.textContent = `Video: ${video.srcObject ? 'Streaming' : 'No Stream'} (${video.videoWidth}x${video.videoHeight})`;
         scannerStatus.textContent = `Scanner: ${isScannerRunning() ? 'Running' : 'Stopped'}`;
+        
+        // Frame statistics
+        if (frameStats.startTime) {
+          const runtime = Math.round((Date.now() - frameStats.startTime) / 1000);
+          const successRate = frameStats.totalFrames > 0 ? Math.round((frameStats.successfulScans / frameStats.totalFrames) * 100) : 0;
+          frameStatsElement.textContent = `Frames: ${frameStats.totalFrames} | Success: ${frameStats.successfulScans} | Failed: ${frameStats.failedScans} | Rate: ${successRate}% | Runtime: ${runtime}s`;
+        } else {
+          frameStatsElement.textContent = 'Frame Stats: Not started';
+        }
+        
+        // Quality statistics
+        if (frameStats.frameQuality.length > 0) {
+          const latest = frameStats.frameQuality[frameStats.frameQuality.length - 1];
+          const avgBrightness = Math.round(frameStats.frameQuality.reduce((sum, q) => sum + q.brightness, 0) / frameStats.frameQuality.length);
+          const avgContrast = Math.round(frameStats.frameQuality.reduce((sum, q) => sum + q.contrast, 0) / frameStats.frameQuality.length);
+          qualityStatsElement.textContent = `Quality: B${avgBrightness} C${avgContrast} | Latest: B${latest.brightness} C${latest.contrast} Blur${latest.blurScore}`;
+        } else {
+          qualityStatsElement.textContent = 'Quality: No data';
+        }
         
         // Add more detailed info
         if (video.srcObject) {
@@ -398,12 +753,12 @@
         }
         
         const stream = await getUserMediaPolyfill({ 
-          video: { 
-            facingMode: 'environment',
+          video: {
+            facingMode: 'environment', // Use back camera on mobile
             width: { ideal: 1280, min: 640 },
             height: { ideal: 720, min: 480 },
             frameRate: { ideal: 30, min: 15 }
-          } 
+          }
         });
         
         video.srcObject = stream;
@@ -443,16 +798,24 @@
     }
 
     async function testBarcode() {
-      // Simulate a successful barcode scan without affecting video
-      const testBarcode = '1234567890123';
-      console.log('Testing barcode scan with:', testBarcode);
-      showToast('Testing barcode scan...', 'warning');
-      
-      // Simulate the scan result
-      setTimeout(() => {
-        postScan(testBarcode);
-        showToast('Test barcode scan successful!', 'success');
-      }, 1000);
+      try {
+        showToast('Testing barcode detection...', 'warning');
+        
+        // Simulate a barcode detection to test the pipeline
+        const testBarcode = '1234567890123';
+        console.log('Testing barcode detection with:', testBarcode);
+        
+        // Simulate the detection callback
+        if (typeof postScan === 'function') {
+          await postScan(testBarcode);
+          showToast('Barcode detection test successful!', 'success');
+        } else {
+          showToast('postScan function not available', 'error');
+        }
+      } catch (e) {
+        console.error('Barcode test failed:', e);
+        showToast('Barcode test failed: ' + e.message, 'error');
+      }
     }
 
     async function requestCameraPermission() {
@@ -530,6 +893,48 @@
         return;
       }
 
+      // Compatibility check for required methods
+      try {
+        const testReader = new ZXing.BrowserMultiFormatReader();
+        const requiredMethods = ['decodeFromVideoElement', 'reset'];
+        const missingMethods = requiredMethods.filter(method => typeof testReader[method] !== 'function');
+        
+        if (missingMethods.length > 0) {
+          showToast(`Scanner incompatible: Missing methods: ${missingMethods.join(', ')}`, 'error');
+          console.error('Missing required methods:', missingMethods);
+          return;
+        }
+        
+        // Check if decodeFromVideoElement exists and is callable
+        if (typeof testReader.decodeFromVideoElement !== 'function') {
+          showToast('Scanner incompatible: decodeFromVideoElement method not available', 'error');
+          console.error('decodeFromVideoElement method not available');
+          return;
+        }
+        
+        // Log method signature for debugging
+        console.log('decodeFromVideoElement method signature:', testReader.decodeFromVideoElement.length, 'parameters');
+        console.log('decodeFromVideoElement method:', testReader.decodeFromVideoElement.toString().substring(0, 100) + '...');
+        console.log('ZXing library version info:', {
+          BrowserMultiFormatReader: typeof ZXing.BrowserMultiFormatReader,
+          decodeFromVideoElement: typeof testReader.decodeFromVideoElement,
+          methodLength: testReader.decodeFromVideoElement.length
+        });
+        
+        // Check for alternative methods if decodeFromVideoElement has issues
+        const alternativeMethods = ['decodeFromConstraints', 'decodeFromStream', 'decodeFromVideoDevice'];
+        const availableAlternatives = alternativeMethods.filter(method => typeof testReader[method] === 'function');
+        if (availableAlternatives.length > 0) {
+          console.log('Available alternative methods:', availableAlternatives);
+        }
+        
+        console.log('Compatibility check passed');
+      } catch (e) {
+        showToast('Scanner compatibility check failed: ' + e.message, 'error');
+        console.error('Compatibility check failed:', e);
+        return;
+      }
+
       try {
         console.log('Starting scanning process...');
         showToast('Starting scanner...', 'warning');
@@ -552,29 +957,185 @@
         console.log('Video videoWidth:', video.videoWidth);
         console.log('Video videoHeight:', video.videoHeight);
         
-        codeReader.decodeFromVideoElement(video, (result, err, controls) => {
-          console.log('Scanner callback - result:', result, 'error:', err);
+        // Add a small delay to ensure video is fully ready
+        setTimeout(() => {
+          console.log('Starting barcode detection...');
           
-          if (result) {
-            const text = result.getText();
-            console.log('Barcode detected:', text);
-            const now = Date.now();
-            // Deduplicate rapid repeats
-            if (text && (text !== lastText || now - lastAt > 1500)) {
-              lastText = text; 
-              lastAt = now;
-              postScan(text);
+          // Add frame processing indicator
+          let frameCount = 0;
+          const frameInterval = setInterval(() => {
+            frameCount++;
+            if (frameCount % 30 === 0) { // Log every 30 frames (about once per second)
+              console.log(`Scanner processing frames: ${frameCount} frames processed`);
             }
+          }, 33); // ~30fps
+          
+          // Debug: Log available methods on codeReader
+          console.log('Available codeReader methods:', Object.getOwnPropertyNames(codeReader));
+          console.log('codeReader prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(codeReader)));
+          
+          // Test different decoding methods
+          console.log('Testing decodeFromImage method:', typeof codeReader.decodeFromImage);
+          console.log('Testing decodeFromCanvas method:', typeof codeReader.decodeFromCanvas);
+          console.log('Testing decodeFromVideoElement method:', typeof codeReader.decodeFromVideoElement);
+          
+          // Try to get more detailed method info
+          if (codeReader.decodeFromImage) {
+            console.log('decodeFromImage method signature:', codeReader.decodeFromImage.length, 'parameters');
+            console.log('decodeFromImage toString:', codeReader.decodeFromImage.toString().substring(0, 150));
           }
-          if (err && err.name !== 'NotFoundException') {
-            console.log('Scanning error:', err);
-            console.log('Error details:', {
-              name: err.name,
-              message: err.message,
-              stack: err.stack
-            });
+          
+          // Start continuous scanning with a more robust approach
+          console.log('Starting continuous barcode scanning...');
+          
+          // Initialize frame stats
+          frameStats.startTime = Date.now();
+          frameStats.totalFrames = 0;
+          frameStats.successfulScans = 0;
+          frameStats.failedScans = 0;
+          frameStats.frameQuality = [];
+          
+          // Use a polling approach that's more reliable than ZXing's built-in methods
+          let isScanning = true;
+          let scanCount = 0;
+          const scanInterval = setInterval(async () => {
+            if (!isScanning || !codeReader || !video.srcObject) {
+              clearInterval(scanInterval);
+              return;
+            }
+            
+            scanCount++;
+            frameStats.totalFrames++;
+            
+            if (scanCount % 10 === 0) { // Log every 10 scans (about every 5 seconds)
+              console.log(`Scanner active: ${scanCount} scans performed`);
+              console.log(`Frame stats: Total: ${frameStats.totalFrames}, Success: ${frameStats.successfulScans}, Failed: ${frameStats.failedScans}`);
+            }
+            
+            try {
+              // Capture current frame
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              
+              // Draw current video frame
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              // Analyze frame quality
+              const quality = analyzeFrameQuality(canvas);
+              frameStats.frameQuality.push(quality);
+              
+              // Keep only last 100 quality measurements to prevent memory issues
+              if (frameStats.frameQuality.length > 100) {
+                frameStats.frameQuality.shift();
+              }
+              
+              // Try to decode the frame using multiple methods
+              let decodeResult = null;
+              
+              // Method 1: Try decodeFromImage (most reliable for canvas)
+              if (typeof codeReader.decodeFromImage === 'function') {
+                try {
+                  decodeResult = await codeReader.decodeFromImage(canvas);
+                  if (decodeResult) {
+                    console.log('Barcode detected via decodeFromImage:', decodeResult.getText());
+                  }
+                } catch (e) {
+                  if (e.name !== 'NotFoundException') {
+                    console.log('decodeFromImage error:', e.name, e.message);
+                  }
+                }
+              }
+              
+              // Method 2: Try decodeFromCanvas if available
+              if (!decodeResult && typeof codeReader.decodeFromCanvas === 'function') {
+                try {
+                  decodeResult = await codeReader.decodeFromCanvas(canvas);
+                  if (decodeResult) {
+                    console.log('Barcode detected via decodeFromCanvas:', decodeResult.getText());
+                  }
+                } catch (e) {
+                  if (e.name !== 'NotFoundException') {
+                    console.log('decodeFromCanvas error:', e.name, e.message);
+                  }
+                }
+              }
+              
+              // Method 3: Try decodeFromVideoElement with a single frame
+              if (!decodeResult && typeof codeReader.decodeFromVideoElement === 'function') {
+                try {
+                  // Create a temporary video element with the current frame
+                  const tempVideo = document.createElement('video');
+                  tempVideo.srcObject = video.srcObject;
+                  tempVideo.currentTime = video.currentTime;
+                  
+                  decodeResult = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => reject(new Error('Timeout')), 1000);
+                    codeReader.decodeFromVideoElement(tempVideo, (result, error) => {
+                      clearTimeout(timeout);
+                      if (error && error.name !== 'NotFoundException') {
+                        reject(error);
+                      } else {
+                        resolve(result);
+                      }
+                    });
+                  });
+                  
+                  if (decodeResult) {
+                    console.log('Barcode detected via decodeFromVideoElement:', decodeResult.getText());
+                  }
+                } catch (e) {
+                  if (e.name !== 'NotFoundException') {
+                    console.log('decodeFromVideoElement error:', e.name, e.message);
+                  }
+                }
+              }
+              
+              // Process result if any method succeeded
+              if (decodeResult) {
+                const text = decodeResult.getText();
+                console.log('Barcode detected via polling:', text);
+                console.log('Frame quality at detection:', quality);
+                
+                const now = Date.now();
+                // Deduplicate rapid repeats
+                if (text && (text !== lastText || now - lastAt > 1500)) {
+                  lastText = text; 
+                  lastAt = now;
+                  frameStats.lastScanTime = now;
+                  frameStats.successfulScans++;
+                  
+                  postScan(text);
+                  showToast(`Barcode detected: ${text}`, 'success');
+                  
+                  // Add visual feedback
+                  video.style.border = '3px solid #4CAF50';
+                  setTimeout(() => {
+                    video.style.border = '';
+                  }, 2000);
+                }
+              } else {
+                // No barcode found - this is normal
+                frameStats.failedScans++;
+              }
+            } catch (e) {
+              console.log('Frame capture error:', e);
+              frameStats.failedScans++;
+            }
+          }, 500); // Check every 500ms
+          
+          // Store the interval for cleanup
+          if (codeReader) {
+            codeReader.scanInterval = scanInterval;
+            codeReader.isScanning = true;
           }
-        });
+          
+          // Store the interval for cleanup
+          if (codeReader) {
+            codeReader.frameInterval = frameInterval;
+          }
+        }, 500);
         
         showToast('Scanner started successfully!', 'success');
         console.log('Scanning started successfully');
@@ -589,8 +1150,33 @@
     async function stopScanning() {
       if (codeReader) {
         try {
+          // Stop the scanning loop
+          if (codeReader.isScanning !== undefined) {
+            codeReader.isScanning = false;
+          }
+          
+          // Clear the scan interval if it exists
+          if (codeReader.scanInterval) {
+            clearInterval(codeReader.scanInterval);
+            codeReader.scanInterval = null;
+          }
+          
+          // Clear the frame interval if it exists (legacy)
+          if (codeReader.frameInterval) {
+            clearInterval(codeReader.frameInterval);
+            codeReader.frameInterval = null;
+          }
+          
           await codeReader.reset();
           codeReader = null;
+          
+          // Log final frame statistics
+          if (frameStats.startTime) {
+            const runtime = Math.round((Date.now() - frameStats.startTime) / 1000);
+            const successRate = frameStats.totalFrames > 0 ? Math.round((frameStats.successfulScans / frameStats.totalFrames) * 100) : 0;
+            console.log(`Scanner stopped. Final stats: ${frameStats.totalFrames} frames, ${frameStats.successfulScans} successful, ${frameStats.failedScans} failed, ${successRate}% success rate, ${runtime}s runtime`);
+          }
+          
           showToast('Scanner stopped');
           console.log('Scanner stopped');
           updateDebugInfo();
@@ -617,12 +1203,200 @@
       }
     }
 
+    async function restartVideo() {
+      console.log('Restarting video stream...');
+      showToast('Restarting video stream...', 'warning');
+      await stopVideo(); // Stop the current stream
+      await requestCameraPermission(); // Request permission again
+      await startScanning(); // Start scanning with the new stream
+      showToast('Video stream restarted successfully!', 'success');
+      console.log('Video stream restarted successfully');
+      updateDebugInfo();
+    }
+    
+    async function recoverVideoStream() {
+      console.log('Attempting to recover video stream...');
+      if (currentStream && currentStream.active) {
+        try {
+          // Reconnect the video element to the existing stream
+          video.srcObject = currentStream;
+          await new Promise(resolve => {
+            video.onloadedmetadata = resolve;
+            video.onerror = () => resolve();
+            // Timeout after 3 seconds
+            setTimeout(resolve, 3000);
+          });
+          
+          if (video.readyState >= 2) {
+            console.log('Video stream recovered successfully');
+            showToast('Video stream recovered!', 'success');
+            return true;
+          }
+        } catch (e) {
+          console.log('Video recovery failed:', e);
+        }
+      }
+      
+      // If recovery failed, do full restart
+      console.log('Recovery failed, doing full restart...');
+      await restartVideo();
+      return false;
+    }
+
+    async function captureAndDecode() {
+      try {
+        if (!video.srcObject) {
+          showToast('No video stream available', 'error');
+          return;
+        }
+        
+        showToast('Capturing frame...', 'warning');
+        console.log('Capturing frame for manual decode...');
+        
+        // Check if video stream is still active
+        if (video.readyState === 0) {
+          showToast('Video stream not ready, restarting...', 'warning');
+          await restartVideo();
+          return;
+        }
+        
+        // Create a canvas to capture the current video frame
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw the current video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        console.log('Frame captured, dimensions:', canvas.width, 'x', canvas.height);
+        
+        // Try different decoding methods
+        let decodeResult = null;
+        
+        // Method 1: Try decodeFromImage (most common)
+        if (codeReader && typeof codeReader.decodeFromImage === 'function') {
+          try {
+            console.log('Trying decodeFromImage...');
+            decodeResult = await codeReader.decodeFromImage(canvas);
+            console.log('decodeFromImage result:', decodeResult);
+          } catch (e) {
+            console.log('decodeFromImage failed:', e);
+          }
+        }
+        
+        // Method 2: Try decodeFromCanvas if available
+        if (!decodeResult && codeReader && typeof codeReader.decodeFromCanvas === 'function') {
+          try {
+            console.log('Trying decodeFromCanvas...');
+            decodeResult = await codeReader.decodeFromCanvas(canvas);
+            console.log('decodeFromCanvas result:', decodeResult);
+          } catch (e) {
+            console.log('decodeFromCanvas failed:', e);
+          }
+        }
+        
+        // Method 3: Try decodeFromVideoElement with a single frame
+        if (!decodeResult && codeReader && typeof codeReader.decodeFromVideoElement === 'function') {
+          try {
+            console.log('Trying decodeFromVideoElement with single frame...');
+            // Create a temporary video element with the captured frame
+            const tempVideo = document.createElement('video');
+            tempVideo.width = canvas.width;
+            tempVideo.height = canvas.height;
+            
+            // Convert canvas to blob and create video source
+            canvas.toBlob(async (blob) => {
+              const videoUrl = URL.createObjectURL(blob);
+              tempVideo.src = videoUrl;
+              tempVideo.onloadeddata = async () => {
+                try {
+                  const result = await codeReader.decodeFromVideoElement(tempVideo);
+                  if (result) {
+                    const text = result.getText();
+                    console.log('Single frame decode successful:', text);
+                    showToast(`Barcode detected: ${text}`, 'success');
+                    postScan(text);
+                  } else {
+                    showToast('No barcode found in captured frame', 'warning');
+                  }
+                } catch (e) {
+                  console.log('Single frame decode failed:', e);
+                  showToast('Manual decode failed: ' + e.message, 'error');
+                } finally {
+                  URL.revokeObjectURL(videoUrl);
+                }
+              };
+            }, 'image/jpeg');
+            return; // Exit early since this is async
+          } catch (e) {
+            console.log('Single frame decode setup failed:', e);
+          }
+        }
+        
+        // Method 4: Try direct canvas decode with different ZXing methods
+        if (!decodeResult && codeReader) {
+          const alternativeMethods = ['decodeFromCanvas', 'decodeFromImageElement'];
+          for (const method of alternativeMethods) {
+            if (typeof codeReader[method] === 'function') {
+              try {
+                console.log(`Trying ${method}...`);
+                const result = await codeReader[method](canvas);
+                if (result) {
+                  decodeResult = result;
+                  console.log(`${method} successful:`, result);
+                  break;
+                }
+              } catch (e) {
+                console.log(`${method} failed:`, e);
+              }
+            }
+          }
+        }
+        
+        // Check if any method worked
+        if (decodeResult) {
+          const text = decodeResult.getText();
+          console.log('Manual decode successful:', text);
+          showToast(`Barcode detected: ${text}`, 'success');
+          postScan(text);
+        } else {
+          console.log('All decode methods failed');
+          showToast('No barcode found in captured frame', 'warning');
+        }
+        
+        // Check if video stream is still working after capture (less aggressive)
+        setTimeout(async () => {
+          if (!video.srcObject || video.readyState === 0) {
+            console.log('Video stream interrupted after capture, attempting recovery...');
+            await recoverVideoStream();
+          }
+        }, 2000);
+        
+      } catch (e) {
+        console.error('Capture failed:', e);
+        showToast('Capture failed: ' + e.message, 'error');
+        
+        // Only restart if absolutely necessary
+        if (!video.srcObject && !currentStream) {
+          console.log('Complete stream loss, attempting recovery...');
+          await recoverVideoStream();
+        }
+      }
+    }
+
     startBtn.addEventListener('click', startScanning);
     stopBtn.addEventListener('click', stopScanning);
     stopVideoBtn.addEventListener('click', stopVideo);
+    restartVideoBtn.addEventListener('click', restartVideo);
+    recoverVideoBtn.addEventListener('click', recoverVideoStream);
     permissionBtn.addEventListener('click', requestCameraPermission);
     testVideoBtn.addEventListener('click', testVideo);
     testBarcodeBtn.addEventListener('click', testBarcode);
+    generateTestBarcodeBtn.addEventListener('click', generateTestBarcode);
+    captureBtn.addEventListener('click', captureAndDecode);
+    exportFramesBtn.addEventListener('click', exportFailedFrames);
+    exportStatsBtn.addEventListener('click', exportFrameStats);
     debugToggleBtn.addEventListener('click', toggleDebug);
     
     manualBtn.addEventListener('click', () => {
