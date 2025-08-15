@@ -9,7 +9,14 @@ router = APIRouter(prefix="/api/items", tags=["items"])
 
 
 @router.get("/", response_model=List[schemas.ItemRead])
-def list_items(limit: int = Query(500, ge=1, le=5000), offset: int = Query(0, ge=0), db: Session = Depends(get_db)):
+def list_items(
+    limit: int = Query(500, ge=1, le=5000), 
+    offset: int = Query(0, ge=0), 
+    search: str = Query(None, description="Search term for name, game, set, or barcode"),
+    db: Session = Depends(get_db)
+):
+    if search:
+        return crud.search_items(db, search, limit=limit, offset=offset)
     return crud.list_items(db, limit=limit, offset=offset)
 
 
@@ -33,7 +40,7 @@ def create_item(payload: schemas.ItemCreate, db: Session = Depends(get_db)):
         name=payload.name,
         game=payload.game,
         set_name=payload.set_name,
-        number_in_set=payload.number_in_set,
+        brand=payload.brand,
         quantity=payload.quantity or 0,
         location=payload.location,
         notes=payload.notes,
@@ -50,3 +57,12 @@ def update_item(item_id: int, payload: schemas.ItemUpdate, db: Session = Depends
         raise HTTPException(status_code=404, detail="Item not found")
     updated = crud.update_item(db, item, **payload.model_dump(exclude_unset=True))
     return updated
+
+
+@router.delete("/{item_id}")
+def delete_item(item_id: int, db: Session = Depends(get_db)):
+    item = crud.get_item_by_id(db, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    crud.delete_item(db, item)
+    return {"message": "Item deleted successfully"}

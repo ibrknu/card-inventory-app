@@ -34,16 +34,45 @@
       margin: 0 auto;
     }
     
-    @media (min-width: 768px) {
-      main {
-        padding: 16px;
-        max-width: 600px;
-      }
-      
-      header h2 {
-        font-size: 2rem;
-      }
-    }
+         @media (min-width: 768px) {
+       main {
+         padding: 16px;
+         max-width: 600px;
+       }
+       
+       header h2 {
+         font-size: 2rem;
+       }
+       
+       /* Larger logo on desktop */
+       header img[alt="JC & Sons Logo"] {
+         height: 40px !important;
+         max-width: 120px !important;
+         left: 20px !important;
+       }
+     }
+     
+     /* Medium screens */
+     @media (min-width: 480px) and (max-width: 767px) {
+       header img[alt="JC & Sons Logo"] {
+         height: 36px !important;
+         max-width: 100px !important;
+         left: 18px !important;
+       }
+     }
+     
+     /* Small mobile screens */
+     @media (max-width: 479px) {
+       header img[alt="JC & Sons Logo"] {
+         height: 28px !important;
+         max-width: 70px !important;
+         left: 12px !important;
+       }
+       
+       header h2 {
+         font-size: 1.3rem;
+       }
+     }
     
     .card { 
       background: #14171a; 
@@ -154,6 +183,7 @@
     }
     .error { background: #3f1717; color: #ffb7b7; }
     .warning { background: #3f2f17; color: #ffd7b7; }
+    .info { background: #172a3f; color: #b7d8ff; }
     .muted { color: #9aa5b1; font-size: 14px; }
     .small { font-size: 12px; }
     a { color: #66fcf1; }
@@ -200,6 +230,121 @@
     .gap-2 { gap: 8px; }
     .mb-2 { margin-bottom: 8px; }
     .mb-4 { margin-bottom: 16px; }
+
+    /* Inventory modal styles */
+    .inventory-list {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .inventory-item {
+      background: #1f2833;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-left: 4px solid #45a29e;
+    }
+
+         .item-header {
+       display: flex;
+       justify-content: space-between;
+       align-items: center;
+       margin-bottom: 8px;
+     }
+
+     .item-actions {
+       display: flex;
+       align-items: center;
+       gap: 8px;
+     }
+
+     .quantity {
+       background: #45a29e;
+       color: #0b0c10;
+       padding: 2px 8px;
+       border-radius: 12px;
+       font-size: 0.9em;
+       font-weight: bold;
+     }
+
+     .edit-btn {
+       background: #2a3f4c;
+       color: #eaf0f6;
+       border: 1px solid #45a29e;
+       padding: 4px 8px;
+       border-radius: 6px;
+       font-size: 0.8em;
+       cursor: pointer;
+       transition: all 0.2s ease;
+     }
+
+     .edit-btn:hover {
+       background: #45a29e;
+       color: #0b0c10;
+     }
+
+    .item-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .item-details span {
+      background: #2a3f4c;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+
+         .game { color: #45a29e; }
+     .set { color: #c5c6c7; }
+     .brand { color: #e74c3c; }
+     .price { color: #27ae60; }
+
+    .location {
+      font-size: 0.9em;
+      color: #c5c6c7;
+      margin-bottom: 4px;
+    }
+
+         .description {
+       font-size: 0.85em;
+       color: #a0a0a0;
+       font-style: italic;
+     }
+
+     /* Selection styles */
+     .inventory-controls {
+       display: flex;
+       align-items: center;
+       gap: 8px;
+       flex-wrap: wrap;
+     }
+
+     .item-checkbox {
+       margin-right: 8px;
+       transform: scale(1.2);
+       accent-color: #45a29e;
+     }
+
+     .inventory-item.selected {
+       border-left: 4px solid #e74c3c;
+       background: #2a1a1a;
+     }
+
+     .inventory-item .item-header {
+       display: flex;
+       justify-content: space-between;
+       align-items: center;
+       margin-bottom: 8px;
+     }
+
+     .item-selection {
+       display: flex;
+       align-items: center;
+       gap: 8px;
+     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script>
@@ -212,43 +357,30 @@
   </script>
 </head>
 <body>
-  <header>
-    <h2>Card Inventory</h2>
-  </header>
+           <header>
+      <div style="position: relative; display: flex; justify-content: center; align-items: center;">
+        <!-- JC Logo Image -->
+        <img src="/static/jc-logo.png" alt="JC & Sons Logo" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); height: 32px; width: auto; max-width: 80px; min-width: 24px; object-fit: contain;">
+        <h2>JC & Sons Inventory</h2>
+        <button id="refreshBtn" style="position: absolute; right: 0; background: none; border: none; color: #eaf0f6; font-size: 1.2rem; cursor: pointer; padding: 8px; border-radius: 50%; transition: background-color 0.2s;" title="Refresh page">🔄</button>
+      </div>
+    </header>
   <main class="grid">
     <section class="card">
       <div class="grid">
-        <video id="video" playsinline autoplay muted></video>
-        <div class="button-grid">
-          <button id="startBtn">Start Scanning</button>
-          <button id="stopBtn" class="secondary">Stop Scanner</button>
-          <button id="stopVideoBtn" class="secondary">Stop Video</button>
-          <button id="restartVideoBtn" class="secondary">Restart Video</button>
-          <button id="recoverVideoBtn" class="secondary">Recover Video</button>
-          <button id="permissionBtn" class="secondary">Request Camera Permission</button>
-          <button id="testVideoBtn" class="secondary">Test Video</button>
-          <button id="testBarcodeBtn" class="secondary">Test Barcode</button>
-        <button id="generateTestBarcodeBtn" class="secondary">Generate Test Barcode</button>
-          <button id="captureBtn" class="secondary">Capture & Decode</button>
-          <button id="exportFramesBtn" class="secondary">Export Failed Frames</button>
-          <button id="exportStatsBtn" class="secondary">Export All Stats</button>
-          <button id="debugToggleBtn" class="secondary">Debug Info</button>
-        </div>
-        <div class="muted small">
-          <strong>iPhone Camera Issues?</strong><br>
-          • Use Safari (not Chrome)<br>
-          • Go to Settings → Privacy → Camera → Safari<br>
-          • Try adding to Home Screen<br>
-          • Use manual entry below as backup
-        </div>
-        <div id="debugInfo" class="muted small" style="display: none;">
-          <strong>Debug Info:</strong><br>
-          <span id="cameraStatus">Camera: Unknown</span><br>
-          <span id="videoStatus">Video: Unknown</span><br>
-          <span id="scannerStatus">Scanner: Unknown</span><br>
-          <span id="frameStats">Frame Stats: Unknown</span><br>
-          <span id="qualityStats">Quality: Unknown</span>
-        </div>
+                 <video id="video" playsinline autoplay muted style="display: none;"></video>
+                 <div class="button-grid">
+           <button id="startBtn">Start Scanning</button>
+           <button id="stopBtn" class="secondary">Stop Scanner</button>
+           <button id="debugBtn" class="secondary" style="grid-column: 1 / -1;">🔧 Debug Mode: OFF</button>
+         </div>
+                 <div class="muted small">
+           <strong>iPhone Camera Issues?</strong><br>
+           • Use Safari (not Chrome)<br>
+           • Go to Settings → Privacy → Camera → Safari<br>
+           • Try adding to Home Screen<br>
+           • Use manual entry below as backup
+         </div>
         <div id="toast" class="toast"></div>
       </div>
     </section>
@@ -264,133 +396,230 @@
     </section>
 
     <section class="card">
-      <h3>Tips</h3>
-      <ul>
-        <li>Add this page to Home Screen in Safari.</li>
-        <li>Good lighting improves scan reliability.</li>
-        <li>Use landscape if autofocus struggles.</li>
-        <li>New items will prompt for additional details.</li>
-      </ul>
-      <div class="small muted">API: <a href="/docs">Swagger</a></div>
+      <h3>Inventory Management</h3>
+      <div class="button-grid">
+        <button id="viewInventoryBtn" class="success">📊 View My Inventory</button>
+                 <button id="searchInventoryBtn" class="secondary">🔍 Search</button>
+        <button id="exportInventoryBtn" class="secondary">📤 Export Data</button>
+      </div>
     </section>
+
+         <section class="card">
+       <h3>Tips</h3>
+       <ul>
+         <li><strong>Add to Home Screen:</strong>
+           <ul>
+             <li><strong>iPhone/iPad:</strong> Tap the Share button (📤) → "Add to Home Screen" → "Add"</li>
+             <li><strong>Android Chrome:</strong> Tap menu (⋮) → "Add to Home screen" → "Add"</li>
+             <li><strong>Android Firefox:</strong> Tap menu (⋮) → "Add to Home Screen" → "Add"</li>
+           </ul>
+         </li>
+         <li>Good lighting improves scan reliability.</li>
+         <li>Use landscape if autofocus struggles.</li>
+         <li>New items will prompt for additional details.</li>
+         <li>Use Safari on iPhone for best camera compatibility.</li>
+       </ul>
+       <div class="small muted">API: <a href="/docs">Swagger</a></div>
+     </section>
+
+         <!-- Inventory Display Section -->
+     <section id="inventorySection" class="card" style="display: none;">
+       <h3 id="inventoryTitle">My Card Inventory</h3>
+       <p class="muted" id="inventoryCount">0 items found</p>
+       
+       <div class="inventory-controls" style="margin-bottom: 12px;">
+         <button id="selectAllBtn" class="secondary" style="margin-right: 8px;">☐ Select All</button>
+         <button id="deleteSelectedBtn" class="danger" style="display: none;">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button>
+       </div>
+       
+       <div id="inventoryList" class="inventory-list">
+         <!-- Inventory items will be displayed here -->
+       </div>
+       
+       <div class="button-grid">
+         <button id="closeInventoryBtn" class="secondary">Close Inventory</button>
+       </div>
+     </section>
   </main>
 
-  <!-- New Item Modal -->
-  <div id="newItemModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeNewItemModal()">&times;</span>
-      <h3>Add New Item</h3>
-      <p class="muted">Barcode: <span id="newItemBarcode"></span></p>
-      
-      <form id="newItemForm">
-        <div class="form-group">
-          <label for="itemName">Name</label>
-          <input type="text" id="itemName" placeholder="Card name">
-        </div>
-        
-        <div class="form-group">
-          <label for="itemGame">Game</label>
-          <select id="itemGame">
-            <option value="">Select game...</option>
-            <option value="Pokémon">Pokémon</option>
-            <option value="Magic: The Gathering">Magic: The Gathering</option>
-            <option value="Yu-Gi-Oh!">Yu-Gi-Oh!</option>
-            <option value="NFL">NFL</option>
-            <option value="NBA">NBA</option>
-            <option value="MLB">MLB</option>
-            <option value="WNBA">WNBA</option>
-            <option value="Hockey">Hockey</option>
-            <option value="College">College</option>
-            <option value="MMA">MMA</option>
-            <option value="Soccer">Soccer</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="itemSet">Set</label>
-          <input type="text" id="itemSet" placeholder="Set name">
-        </div>
-        <div class="form-group">
-          <label for="itemNumber">Number</label>
-          <input type="text" id="itemNumber" placeholder="Card number">
-        </div>
-        
-        <div class="form-group">
-          <label for="itemQuantity">Quantity</label>
-          <input type="number" id="itemQuantity" value="1" min="1">
-        </div>
-        
-        <div class="form-group">
-          <label for="itemPrice">Price ($)</label>
-          <input type="number" id="itemPrice" step="0.01" min="0" placeholder="0.00">
-        </div>
-        
-        <div class="form-group">
-          <label for="itemLocation">Location</label>
-          <input type="text" id="itemLocation" placeholder="Binder, box, etc.">
-        </div>
-        
-        <div class="form-group">
-          <label for="itemDescription">Description</label>
-          <textarea id="itemDescription" placeholder="Additional details about the card..."></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label for="itemNotes">Notes</label>
-          <textarea id="itemNotes" placeholder="Personal notes..."></textarea>
-        </div>
-        
-        <div class="form-group">
-          <button type="submit" class="success">Add Item</button>
-        </div>
-        <div class="form-group">
-          <button type="button" class="secondary" onclick="closeNewItemModal()">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
+     <!-- New Item Modal -->
+   <div id="newItemModal" class="modal">
+     <div class="modal-content">
+       <span class="close" onclick="closeNewItemModal()">&times;</span>
+       <h3>Add New Item</h3>
+       <p class="muted">Barcode: <span id="newItemBarcode"></span></p>
+       
+       <form id="newItemForm">
+         <div class="form-group">
+           <label for="itemName">Name</label>
+           <input type="text" id="itemName" placeholder="Card name">
+         </div>
+         
+         <div class="form-group">
+           <label for="itemGame">Game</label>
+           <select id="itemGame">
+             <option value="">Select game...</option>
+             <option value="Pokémon">Pokémon</option>
+             <option value="Magic: The Gathering">Magic: The Gathering</option>
+             <option value="Yu-Gi-Oh!">Yu-Gi-Oh!</option>
+             <option value="NFL">NFL</option>
+             <option value="NBA">NBA</option>
+             <option value="MLB">MLB</option>
+             <option value="WNBA">WNBA</option>
+             <option value="Hockey">Hockey</option>
+             <option value="College">College</option>
+             <option value="MMA">MMA</option>
+             <option value="Soccer">Soccer</option>
+             <option value="Other">Other</option>
+           </select>
+         </div>
+         
+         <div class="form-group">
+           <label for="itemSet">Set</label>
+           <input type="text" id="itemSet" placeholder="Set name">
+         </div>
+                   <div class="form-group">
+            <label for="itemBrand">Brand</label>
+            <input type="text" id="itemBrand" placeholder="Card brand">
+          </div>
+         
+         <div class="form-group">
+           <label for="itemQuantity">Quantity</label>
+           <input type="number" id="itemQuantity" value="1" min="1">
+         </div>
+         
+         <div class="form-group">
+           <label for="itemPrice">Price ($)</label>
+           <input type="number" id="itemPrice" step="0.01" min="0" placeholder="0.00">
+         </div>
+         
+         <div class="form-group">
+           <label for="itemLocation">Location</label>
+           <input type="text" id="itemLocation" placeholder="Binder, box, etc.">
+         </div>
+         
+         <div class="form-group">
+           <label for="itemDescription">Description</label>
+           <textarea id="itemDescription" placeholder="Additional details about the card..."></textarea>
+         </div>
+         
+         <div class="form-group">
+           <label for="itemNotes">Notes</label>
+           <textarea id="itemNotes" placeholder="Personal notes..."></textarea>
+         </div>
+         
+         <div class="form-group">
+           <button type="submit" class="success">Add Item</button>
+         </div>
+         <div class="form-group">
+           <button type="button" class="secondary" onclick="closeNewItemModal()">Cancel</button>
+         </div>
+       </form>
+     </div>
+   </div>
+
+   <!-- Edit Item Modal -->
+   <div id="editItemModal" class="modal">
+     <div class="modal-content">
+       <span class="close" onclick="closeEditItemModal()">&times;</span>
+       <h3>Edit Item</h3>
+       <p class="muted">Barcode: <span id="editItemBarcode"></span></p>
+       
+       <form id="editItemForm">
+         <div class="form-group">
+           <label for="editItemName">Name</label>
+           <input type="text" id="editItemName" placeholder="Card name">
+         </div>
+         
+         <div class="form-group">
+           <label for="editItemGame">Game</label>
+           <select id="editItemGame">
+             <option value="">Select game...</option>
+             <option value="Pokémon">Pokémon</option>
+             <option value="Magic: The Gathering">Magic: The Gathering</option>
+             <option value="Yu-Gi-Oh!">Yu-Gi-Oh!</option>
+             <option value="NFL">NFL</option>
+             <option value="NBA">NBA</option>
+             <option value="MLB">MLB</option>
+             <option value="WNBA">WNBA</option>
+             <option value="Hockey">Hockey</option>
+             <option value="College">College</option>
+             <option value="MMA">MMA</option>
+             <option value="Soccer">Soccer</option>
+             <option value="Other">Other</option>
+           </select>
+         </div>
+         
+         <div class="form-group">
+           <label for="editItemSet">Set</label>
+           <input type="text" id="editItemSet" placeholder="Set name">
+         </div>
+                   <div class="form-group">
+            <label for="editItemBrand">Brand</label>
+            <input type="text" id="editItemBrand" placeholder="Card brand">
+          </div>
+         
+         <div class="form-group">
+           <label for="editItemQuantity">Quantity</label>
+           <input type="number" id="editItemQuantity" value="1" min="1">
+         </div>
+         
+         <div class="form-group">
+           <label for="editItemPrice">Price ($)</label>
+           <input type="number" id="editItemPrice" step="0.01" min="0" placeholder="0.00">
+         </div>
+         
+         <div class="form-group">
+           <label for="editItemLocation">Location</label>
+           <input type="text" id="editItemLocation" placeholder="Binder, box, etc.">
+         </div>
+         
+         <div class="form-group">
+           <label for="editItemDescription">Description</label>
+           <textarea id="editItemDescription" placeholder="Additional details about the card..."></textarea>
+         </div>
+         
+         <div class="form-group">
+           <label for="editItemNotes">Notes</label>
+           <textarea id="editItemNotes" placeholder="Personal notes..."></textarea>
+         </div>
+         
+                   <div class="form-group" style="display: flex; gap: 8px; justify-content: space-between;">
+            <button type="submit" class="success">Update Item</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="secondary" onclick="closeEditItemModal()">Cancel</button>
+              <button type="button" class="danger" onclick="deleteItem()">🗑️ Delete</button>
+            </div>
+          </div>
+       </form>
+     </div>
+   </div>
 
   <script>
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const stopVideoBtn = document.getElementById('stopVideoBtn');
-    const restartVideoBtn = document.getElementById('restartVideoBtn');
-    const recoverVideoBtn = document.getElementById('recoverVideoBtn');
-    const permissionBtn = document.getElementById('permissionBtn');
-    const testVideoBtn = document.getElementById('testVideoBtn');
-    const testBarcodeBtn = document.getElementById('testBarcodeBtn');
-    const generateTestBarcodeBtn = document.getElementById('generateTestBarcodeBtn');
-    const captureBtn = document.getElementById('captureBtn');
-    const exportFramesBtn = document.getElementById('exportFramesBtn');
-    const exportStatsBtn = document.getElementById('exportStatsBtn');
-    const debugToggleBtn = document.getElementById('debugToggleBtn');
+         const startBtn = document.getElementById('startBtn');
+     const stopBtn = document.getElementById('stopBtn');
     const video = document.getElementById('video');
     const toast = document.getElementById('toast');
     const manualInput = document.getElementById('manualBarcode');
     const manualBtn = document.getElementById('manualBtn');
-    const newItemModal = document.getElementById('newItemModal');
-    const newItemForm = document.getElementById('newItemForm');
-    const newItemBarcode = document.getElementById('newItemBarcode');
+         const newItemModal = document.getElementById('newItemModal');
+     const newItemForm = document.getElementById('newItemForm');
+     const newItemBarcode = document.getElementById('newItemBarcode');
+     const editItemModal = document.getElementById('editItemModal');
+     const editItemForm = document.getElementById('editItemForm');
+     const editItemBarcode = document.getElementById('editItemBarcode');
 
-    let codeReader = null;
-    let currentStream = null;
-    let lastText = '';
-    let lastAt = 0;
-    let pendingBarcode = null;
-    let debugVisible = false;
-    let isScanning = false;
+         let codeReader = null;
+     let currentStream = null;
+     let lastText = '';
+     let lastAt = 0;
+     let pendingBarcode = null;
+     let isScanning = false;
+     let selectedItems = new Set();
+     let allItems = [];
+     let debugMode = false;
     
-    // Frame data tracking
-    let frameStats = {
-      totalFrames: 0,
-      successfulScans: 0,
-      failedScans: 0,
-      startTime: null,
-      lastScanTime: null,
-      frameQuality: [],
-      failedFrames: []
-    };
+    
 
     // Detect iOS device
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -402,132 +631,7 @@
     // Check if we're on HTTPS (required for camera access)
     const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    // Frame quality analysis functions
-    function analyzeFrameQuality(canvas) {
-      const ctx = canvas.getContext('2d');
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      
-      let totalBrightness = 0;
-      let totalContrast = 0;
-      
-      // Calculate brightness and contrast
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const brightness = (r + g + b) / 3;
-        totalBrightness += brightness;
-      }
-      
-      const avgBrightness = totalBrightness / (data.length / 4);
-      
-      // Calculate contrast (standard deviation of brightness)
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const brightness = (r + g + b) / 3;
-        totalContrast += Math.pow(brightness - avgBrightness, 2);
-      }
-      
-      const contrast = Math.sqrt(totalContrast / (data.length / 4));
-      
-      // Simple blur detection (edge detection)
-      let edgeCount = 0;
-      for (let y = 1; y < canvas.height - 1; y++) {
-        for (let x = 1; x < canvas.width - 1; x++) {
-          const idx = (y * canvas.width + x) * 4;
-          const center = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-          const right = (data[idx + 4] + data[idx + 5] + data[idx + 6]) / 3;
-          const down = (data[idx + canvas.width * 4] + data[idx + canvas.width * 4 + 1] + data[idx + canvas.width * 4 + 2]) / 3;
-          
-          const edgeX = Math.abs(center - right);
-          const edgeY = Math.abs(center - down);
-          
-          if (edgeX > 30 || edgeY > 30) {
-            edgeCount++;
-          }
-        }
-      }
-      
-      const blurScore = 1 - (edgeCount / (canvas.width * canvas.height));
-      
-      return {
-        brightness: Math.round(avgBrightness),
-        contrast: Math.round(contrast),
-        blurScore: Math.round(blurScore * 100) / 100,
-        timestamp: Date.now(),
-        dimensions: `${canvas.width}x${canvas.height}`
-      };
-    }
     
-    function saveFailedFrame(canvas, quality, error) {
-      const frameData = {
-        quality: quality,
-        error: error,
-        timestamp: Date.now(),
-        dataUrl: canvas.toDataURL('image/jpeg', 0.8)
-      };
-      
-      frameStats.failedFrames.push(frameData);
-      
-      // Keep only last 10 failed frames to prevent memory issues
-      if (frameStats.failedFrames.length > 10) {
-        frameStats.failedFrames.shift();
-      }
-    }
-    
-    function exportFailedFrames() {
-      if (frameStats.failedFrames.length === 0) {
-        showToast('No failed frames to export', 'warning');
-        return;
-      }
-      
-      const exportData = {
-        summary: {
-          totalFailed: frameStats.failedFrames.length,
-          timeRange: `${new Date(frameStats.failedFrames[0].timestamp).toLocaleTimeString()} - ${new Date(frameStats.failedFrames[frameStats.failedFrames.length - 1].timestamp).toLocaleTimeString()}`,
-          exportTime: new Date().toISOString()
-        },
-        frames: frameStats.failedFrames
-      };
-      
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `failed-frames-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      showToast(`Exported ${frameStats.failedFrames.length} failed frames`, 'success');
-    }
-    
-    function exportFrameStats() {
-      const exportData = {
-        summary: {
-          totalFrames: frameStats.totalFrames,
-          successfulScans: frameStats.successfulScans,
-          failedScans: frameStats.failedScans,
-          startTime: frameStats.startTime ? new Date(frameStats.startTime).toISOString() : null,
-          lastScanTime: frameStats.lastScanTime ? new Date(frameStats.lastScanTime).toISOString() : null,
-          exportTime: new Date().toISOString()
-        },
-        frameQuality: frameStats.frameQuality,
-        failedFrames: frameStats.failedFrames
-      };
-      
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `frame-stats-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      showToast(`Exported complete frame statistics`, 'success');
-    }
     
     // Test QuaggaJS library on page load
     function testQuaggaLibrary() {
@@ -550,14 +654,32 @@
       }
     }
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('Page loaded, initializing...');
-      
-      // Test QuaggaJS library
-      if (!testQuaggaLibrary()) {
-        return;
-      }
+         // Initialize on page load
+     document.addEventListener('DOMContentLoaded', () => {
+       console.log('Page loaded, initializing...');
+       
+       // Test QuaggaJS library
+       if (!testQuaggaLibrary()) {
+         return;
+       }
+       
+       // Add video event listeners for debugging
+       video.addEventListener('loadedmetadata', () => {
+         console.log('Video metadata loaded:', {
+           videoWidth: video.videoWidth,
+           videoHeight: video.videoHeight,
+           duration: video.duration
+         });
+       });
+       
+       video.addEventListener('canplay', () => {
+         console.log('Video can play - stream is ready');
+       });
+       
+       video.addEventListener('error', (e) => {
+         console.error('Video error:', e);
+         showToast('Video stream error', 'error');
+       });
       
       // Check browser compatibility
       console.log('Browser compatibility check:');
@@ -570,15 +692,11 @@
         console.log('- getUserMedia supported:', !!navigator.mediaDevices.getUserMedia);
       }
       
-      // Check camera support and show/hide buttons accordingly
-      if (!isCameraSupported) {
-        console.log('Camera API not supported');
-        showToast('Camera not supported in this browser. Use manual entry.', 'warning');
-        // Hide camera-related buttons
-        document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('permissionBtn').style.display = 'none';
-        document.getElementById('testVideoBtn').style.display = 'none';
-      }
+             // Check camera support
+       if (!isCameraSupported) {
+         console.log('Camera API not supported');
+         showToast('Camera not supported in this browser. Use manual entry.', 'warning');
+       }
       
       if (!isSecure) {
         console.log('Not on HTTPS - camera access may be limited');
@@ -586,62 +704,7 @@
       }
     });
 
-    function isScannerRunning() {
-      return isScanning;
-    }
     
-    function updateDebugInfo() {
-      const debugInfo = document.getElementById('debugInfo');
-      const cameraStatus = document.getElementById('cameraStatus');
-      const videoStatus = document.getElementById('videoStatus');
-      const scannerStatus = document.getElementById('scannerStatus');
-      const frameStatsElement = document.getElementById('frameStats');
-      const qualityStatsElement = document.getElementById('qualityStats');
-      
-      if (debugVisible) {
-        debugInfo.style.display = 'block';
-        cameraStatus.textContent = `Camera: ${currentStream ? 'Active' : 'Inactive'}`;
-        videoStatus.textContent = `Video: ${video.srcObject ? 'Streaming' : 'No Stream'} (${video.videoWidth}x${video.videoHeight})`;
-        scannerStatus.textContent = `Scanner: ${isScannerRunning() ? 'Running' : 'Stopped'}`;
-        
-        // Frame statistics
-        if (frameStats.startTime) {
-          const runtime = Math.round((Date.now() - frameStats.startTime) / 1000);
-          const successRate = frameStats.totalFrames > 0 ? Math.round((frameStats.successfulScans / frameStats.totalFrames) * 100) : 0;
-          frameStatsElement.textContent = `Frames: ${frameStats.totalFrames} | Success: ${frameStats.successfulScans} | Failed: ${frameStats.failedScans} | Rate: ${successRate}% | Runtime: ${runtime}s`;
-        } else {
-          frameStatsElement.textContent = 'Frame Stats: Not started';
-        }
-        
-        // Quality statistics
-        if (frameStats.frameQuality.length > 0) {
-          const latest = frameStats.frameQuality[frameStats.frameQuality.length - 1];
-          const avgBrightness = Math.round(frameStats.frameQuality.reduce((sum, q) => sum + q.brightness, 0) / frameStats.frameQuality.length);
-          const avgContrast = Math.round(frameStats.frameQuality.reduce((sum, q) => sum + q.contrast, 0) / frameStats.frameQuality.length);
-          qualityStatsElement.textContent = `Quality: B${avgBrightness} C${avgContrast} | Latest: B${latest.brightness} C${latest.contrast} Blur${latest.blurScore}`;
-        } else {
-          qualityStatsElement.textContent = 'Quality: No data';
-        }
-        
-        // Add more detailed info
-        if (video.srcObject) {
-          const tracks = currentStream?.getVideoTracks();
-          if (tracks && tracks.length > 0) {
-            const track = tracks[0];
-            const settings = track.getSettings();
-            console.log('Video track settings:', settings);
-          }
-        }
-      } else {
-        debugInfo.style.display = 'none';
-      }
-    }
-
-    function toggleDebug() {
-      debugVisible = !debugVisible;
-      updateDebugInfo();
-      debugToggleBtn.textContent = debugVisible ? 'Hide Debug' : 'Debug Info';
-    }
 
     // Polyfill for older browsers
     function getUserMediaPolyfill(constraints) {
@@ -664,12 +727,47 @@
       });
     }
 
-    function showToast(msg, type='success') {
-      toast.textContent = msg;
-      toast.className = `toast ${type}`;
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 3000);
-    }
+         function showToast(msg, type='success') {
+       toast.textContent = msg;
+       toast.className = `toast ${type}`;
+       toast.style.display = 'block';
+       setTimeout(() => { toast.style.display = 'none'; }, 3000);
+     }
+     
+     // Barcode validation function
+     function validateBarcode(code) {
+       if (!code || typeof code !== 'string') {
+         return { valid: false, reason: 'Invalid code type' };
+       }
+       
+       // Remove any non-numeric characters for UPC/EAN validation
+       const cleanCode = code.replace(/\D/g, '');
+       
+       if (cleanCode.length < 8) {
+         return { valid: false, reason: 'Code too short' };
+       }
+       
+       if (cleanCode.length > 13) {
+         return { valid: false, reason: 'Code too long' };
+       }
+       
+       // Check for common barcode patterns
+       const patterns = {
+         upc: /^\d{12}$/,
+         ean13: /^\d{13}$/,
+         ean8: /^\d{8}$/,
+         code128: /^[A-Za-z0-9\-\.\/\+\s]+$/,
+         code39: /^[A-Z0-9\-\.\/\+\s\$\%]+$/
+       };
+       
+       for (const [format, pattern] of Object.entries(patterns)) {
+         if (pattern.test(cleanCode)) {
+           return { valid: true, format: format, cleanCode: cleanCode };
+         }
+       }
+       
+       return { valid: true, format: 'unknown', cleanCode: cleanCode };
+     }
 
     function showNewItemModal(barcode) {
       pendingBarcode = barcode;
@@ -678,11 +776,125 @@
       document.getElementById('itemName').focus();
     }
 
-    function closeNewItemModal() {
-      newItemModal.style.display = 'none';
-      pendingBarcode = null;
-      newItemForm.reset();
-    }
+         function closeNewItemModal() {
+       newItemModal.style.display = 'none';
+       pendingBarcode = null;
+       newItemForm.reset();
+     }
+
+     function showEditItemModal(itemId) {
+       // Fetch the item data and populate the form
+       fetch(`/api/items/${itemId}`)
+         .then(response => response.json())
+         .then(item => {
+                       document.getElementById('editItemBarcode').textContent = item.barcode || 'N/A';
+            document.getElementById('editItemName').value = item.name || '';
+            document.getElementById('editItemGame').value = item.game || '';
+            document.getElementById('editItemSet').value = item.set_name || '';
+            document.getElementById('editItemBrand').value = item.brand || '';
+            document.getElementById('editItemQuantity').value = item.quantity || 1;
+            document.getElementById('editItemPrice').value = item.price || '';
+            document.getElementById('editItemLocation').value = item.location || '';
+            document.getElementById('editItemDescription').value = item.description || '';
+            document.getElementById('editItemNotes').value = item.notes || '';
+           
+           // Store the item ID for the form submission
+           editItemForm.dataset.itemId = itemId;
+           
+           editItemModal.style.display = 'block';
+           document.getElementById('editItemName').focus();
+         })
+         .catch(error => {
+           console.error('Error fetching item:', error);
+           showToast('Failed to load item data', 'error');
+         });
+     }
+
+     function closeEditItemModal() {
+       editItemModal.style.display = 'none';
+       editItemForm.reset();
+       delete editItemForm.dataset.itemId;
+     }
+
+           async function updateItem(formData) {
+        const itemId = editItemForm.dataset.itemId;
+        if (!itemId) {
+          showToast('No item ID found', 'error');
+          return;
+        }
+
+        try {
+          console.log('Updating item:', itemId, formData);
+          
+          const res = await fetch(`/api/items/${itemId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+          
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            console.error('Server error:', errorData);
+            throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+          }
+          
+          const item = await res.json();
+          showToast(`Updated: ${item.name} (qty ${item.quantity})`);
+          closeEditItemModal();
+          
+          // Refresh the inventory display
+          if (document.getElementById('inventorySection').style.display !== 'none') {
+            viewInventory();
+          }
+        } catch (e) {
+          console.error('Error updating item:', e);
+          showToast(`Error: ${e.message}`, 'error');
+        }
+      }
+
+      async function deleteItem() {
+        const itemId = editItemForm.dataset.itemId;
+        if (!itemId) {
+          showToast('No item ID found', 'error');
+          return;
+        }
+
+        // Get the item name for confirmation
+        const itemName = document.getElementById('editItemName').value || 'this item';
+        
+        // Ask for confirmation
+        const confirmed = confirm(`Are you sure you want to delete "${itemName}"?\n\nThis action cannot be undone.`);
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          console.log('Deleting item:', itemId);
+          showToast('Deleting item...', 'warning');
+          
+          const res = await fetch(`/api/items/${itemId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            console.error('Server error:', errorData);
+            throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+          }
+          
+          showToast(`Deleted: ${itemName}`, 'success');
+          closeEditItemModal();
+          
+          // Refresh the inventory display
+          if (document.getElementById('inventorySection').style.display !== 'none') {
+            viewInventory();
+          }
+        } catch (e) {
+          console.error('Error deleting item:', e);
+          showToast(`Error: ${e.message}`, 'error');
+        }
+      }
 
     async function postScan(barcode) {
       try {
@@ -731,460 +943,239 @@
       }
     }
 
-    async function testVideo() {
-      try {
-        console.log('Testing video element...');
-        showToast('Testing video...', 'warning');
-        
-        // Only stop scanner if it's actually running
-        if (codeReader && codeReader.isScanning) {
-          console.log('Stopping existing scanner for video test...');
-          await stopScanning();
-        }
-        
-        const stream = await getUserMediaPolyfill({ 
-          video: {
-            facingMode: 'environment', // Use back camera on mobile
-            width: { ideal: 1280, min: 640 },
-            height: { ideal: 720, min: 480 },
-            frameRate: { ideal: 30, min: 15 }
-          }
-        });
-        
-        video.srcObject = stream;
-        currentStream = stream;
-        
-        // Make video visible and add visual feedback
-        video.style.display = 'block';
-        video.classList.add('testing');
-        video.classList.remove('error');
-        
-        // Wait for video to be ready
-        await new Promise((resolve) => {
-          video.onloadedmetadata = () => {
-            console.log('Video metadata loaded');
-            video.play().then(() => {
-              showToast('Video test successful! Ready for scanning.', 'success');
-              console.log('Video test successful');
-              updateDebugInfo();
-              resolve();
-            }).catch(resolve);
-          };
-          video.onerror = (e) => {
-            console.error('Video error:', e);
-            video.classList.add('error');
-            video.classList.remove('testing');
-            showToast('Video error: ' + e.message, 'error');
-            resolve();
-          };
-        });
-        
-      } catch (error) {
-        console.error('Video test failed:', error);
-        video.classList.add('error');
-        video.classList.remove('testing');
-        showToast('Video test failed: ' + error.message, 'error');
-      }
-    }
-
-    async function testBarcode() {
-      try {
-        showToast('Testing barcode detection...', 'warning');
-        
-        // Simulate a barcode detection to test the pipeline
-        const testBarcode = '1234567890123';
-        console.log('Testing barcode detection with:', testBarcode);
-        
-        // Simulate the detection callback
-        if (typeof postScan === 'function') {
-          await postScan(testBarcode);
-          showToast('Barcode detection test successful!', 'success');
-        } else {
-          showToast('postScan function not available', 'error');
-        }
-      } catch (e) {
-        console.error('Barcode test failed:', e);
-        showToast('Barcode test failed: ' + e.message, 'error');
-      }
-    }
-
-    async function requestCameraPermission() {
-      if (!isCameraSupported) {
-        showToast('Camera not supported in this browser. Use manual entry.', 'error');
-        return;
-      }
-
-      console.log('Requesting camera permission...');
-      console.log('Available APIs:', {
-        mediaDevices: !!navigator.mediaDevices,
-        getUserMedia: !!navigator.getUserMedia,
-        webkitGetUserMedia: !!navigator.webkitGetUserMedia,
-        mozGetUserMedia: !!navigator.mozGetUserMedia,
-        msGetUserMedia: !!navigator.msGetUserMedia
-      });
-
-      try {
-        showToast('Requesting camera permission...', 'warning');
-        
-        const stream = await getUserMediaPolyfill({ 
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-        
-        video.srcObject = stream;
-        currentStream = stream;
-        showToast('Camera permission granted!', 'success');
-        
-        // Stop the stream after permission is granted
-        setTimeout(() => {
-          if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
-            video.srcObject = null;
-          }
-        }, 2000);
-        
-      } catch (error) {
-        console.error('Camera permission error:', error);
-        if (error.name === 'NotAllowedError') {
-          showToast('Camera access denied. Please enable in Settings → Privacy → Camera → Safari', 'error');
-        } else if (error.name === 'NotFoundError') {
-          showToast('No camera found on this device', 'error');
-        } else {
-          showToast(`Camera error: ${error.message}`, 'error');
-        }
-      }
-    }
-
-    async function startScanning() {
-      if (isScanning) {
-        showToast('Scanner already running!', 'warning');
-        return;
-      }
-      
-      if (!isCameraSupported) {
-        showToast('Camera not supported in this browser. Use manual entry.', 'error');
-        return;
-      }
-      
-      // Check if QuaggaJS library is loaded
-      if (typeof Quagga === 'undefined') {
-        showToast('Barcode library not loaded. Please refresh the page.', 'error');
-        console.error('QuaggaJS library not available');
-        return;
-      }
-
-      try {
-        console.log('Starting QuaggaJS scanner...');
-        showToast('Starting scanner...', 'warning');
-        
-        // Initialize frame stats
-        frameStats.startTime = Date.now();
-        frameStats.totalFrames = 0;
-        frameStats.successfulScans = 0;
-        frameStats.failedScans = 0;
-        frameStats.frameQuality = [];
-        
-        // Configure QuaggaJS
-        Quagga.init({
-          inputStream: {
-            name: "Live",
-            type: "LiveStream",
-            target: video,
-            constraints: {
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 },
-              facingMode: "environment", // Use back camera on mobile
-              aspectRatio: { min: 1, max: 2 }
-            },
-            area: { // Only read barcodes in center 80% of the video
-              top: "10%",
-              right: "10%",
-              left: "10%",
-              bottom: "10%"
-            }
-          },
-          decoder: {
-            readers: [
-              "code_128_reader",
-              "ean_reader",
-              "ean_8_reader",
-              "code_39_reader",
-              "code_39_vin_reader",
-              "codabar_reader",
-              "upc_reader",
-              "upc_e_reader",
-              "i2of5_reader"
-            ],
-            multiple: false, // Only return one result at a time
-            debug: {
-              showCanvas: false,
-              showPatches: false,
-              showFoundPatches: false,
-              showSkeleton: false,
-              showLabels: false,
-              showPatchLabels: false,
-              showRemainingPatchLabels: false,
-              boxFromPatches: {
-                showTransformed: false,
-                showTransformedBox: false,
-                showBB: false
-              }
-            }
-          },
-          locate: true,
-          frequency: 10 // Scan every 10 frames
-        }, function(err) {
-          if (err) {
-            console.error('QuaggaJS initialization failed:', err);
-            showToast('Scanner initialization failed: ' + err.message, 'error');
-            return;
-          }
-          
-          console.log('QuaggaJS initialized successfully');
-          showToast('Scanner started successfully!', 'success');
-          isScanning = true;
-          
-          // Start scanning
-          Quagga.start();
-          
-          // Add visual feedback
-          video.classList.add('testing');
-          video.classList.remove('error');
-        });
-        
-        // Handle successful scans
-        Quagga.onDetected(function(result) {
-          const code = result.codeResult.code;
-          console.log('Barcode detected:', code);
-          
-          const now = Date.now();
-          // Deduplicate rapid repeats
-          if (code && (code !== lastText || now - lastAt > 1500)) {
-            lastText = code;
-            lastAt = now;
-            frameStats.lastScanTime = now;
-            frameStats.successfulScans++;
-            
-            postScan(code);
-            showToast(`Barcode detected: ${code}`, 'success');
-            
-            // Add visual feedback
-            video.style.border = '3px solid #4CAF50';
-            setTimeout(() => {
-              video.style.border = '';
-            }, 2000);
-          }
-        });
-        
-        // Handle processing events for frame statistics
-        Quagga.onProcessed(function(result) {
-          frameStats.totalFrames++;
-          if (!result) {
-            frameStats.failedScans++;
-          }
-        });
-        
-        showToast('Scanner started successfully!', 'success');
-        console.log('Scanning started successfully');
-        updateDebugInfo();
-        
-      } catch (e) {
-        console.error('Scanning start failed:', e);
-        showToast('Failed to start scanning: ' + e.message, 'error');
-      }
-    }
-
-    async function stopScanning() {
-      if (isScanning) {
-        try {
-          // Stop QuaggaJS
-          Quagga.stop();
-          isScanning = false;
-          
-          // Remove visual feedback
-          video.classList.remove('testing', 'error');
-          
-          // Log final frame statistics
-          if (frameStats.startTime) {
-            const runtime = Math.round((Date.now() - frameStats.startTime) / 1000);
-            const successRate = frameStats.totalFrames > 0 ? Math.round((frameStats.successfulScans / frameStats.totalFrames) * 100) : 0;
-            console.log(`Scanner stopped. Final stats: ${frameStats.totalFrames} frames, ${frameStats.successfulScans} successful, ${frameStats.failedScans} failed, ${successRate}% success rate, ${runtime}s runtime`);
-          }
-          
-          showToast('Scanner stopped');
-          console.log('Scanner stopped');
-          updateDebugInfo();
-        } catch (e) {
-          console.error('Error stopping scanner:', e);
-        }
-      }
-    }
     
-    async function stopVideo() {
-      if (currentStream) {
-        try {
-          currentStream.getTracks().forEach(track => track.stop());
-          currentStream = null;
-          video.srcObject = null;
-          video.style.display = 'none';
-          video.classList.remove('testing', 'error');
-          showToast('Video stopped');
-          console.log('Video stopped');
-          updateDebugInfo();
-        } catch (e) {
-          console.error('Error stopping video:', e);
-        }
-      }
-    }
 
-    async function restartVideo() {
-      console.log('Restarting video stream...');
-      showToast('Restarting video stream...', 'warning');
-      await stopScanning(); // Stop scanning first
-      await stopVideo(); // Stop the current stream
-      await requestCameraPermission(); // Request permission again
-      await startScanning(); // Start scanning with the new stream
-      showToast('Video stream restarted successfully!', 'success');
-      console.log('Video stream restarted successfully');
-      updateDebugInfo();
-    }
+         async function startScanning() {
+       if (isScanning) {
+         showToast('Scanner already running!', 'warning');
+         return;
+       }
+       
+       if (!isCameraSupported) {
+         showToast('Camera not supported in this browser. Use manual entry.', 'error');
+         return;
+       }
+       
+       // Check if QuaggaJS library is loaded
+       if (typeof Quagga === 'undefined') {
+         showToast('Barcode library not loaded. Please refresh the page.', 'error');
+         console.error('QuaggaJS library not available');
+         return;
+       }
+
+       try {
+         console.log('Starting QuaggaJS scanner...');
+         showToast('Starting scanner...', 'warning');
+         
+         // Make sure video element is visible and ready
+         video.style.display = 'block';
+         video.style.background = '#000';
+         
+         // Try to manually set up video stream as fallback
+         try {
+           const stream = await getUserMediaPolyfill({
+             video: {
+               facingMode: 'environment',
+               width: { ideal: 1280, min: 640 },
+               height: { ideal: 720, min: 480 }
+             }
+           });
+           video.srcObject = stream;
+           currentStream = stream;
+           console.log('Manual video stream setup successful');
+         } catch (e) {
+           console.log('Manual stream setup failed, relying on QuaggaJS:', e);
+         }
+         
+         // Configure QuaggaJS with improved accuracy settings
+         Quagga.init({
+           inputStream: {
+             name: "Live",
+             type: "LiveStream",
+             target: video,
+             constraints: {
+               width: { min: 640, ideal: 1280, max: 1920 },
+               height: { min: 480, ideal: 720, max: 1080 },
+               facingMode: "environment", // Use back camera on mobile
+               aspectRatio: { min: 1, max: 2 }
+             },
+             area: { // Scan the full video area for better detection
+               top: "0%",
+               right: "0%",
+               left: "0%",
+               bottom: "0%"
+             }
+           },
+           decoder: {
+             readers: [
+               "code_128_reader",
+               "ean_reader",
+               "ean_8_reader",
+               "code_39_reader",
+               "code_39_vin_reader",
+               "codabar_reader",
+               "upc_reader",
+               "upc_e_reader",
+               "i2of5_reader"
+             ],
+             multiple: false, // Only return one result at a time
+             debug: {
+               showCanvas: debugMode, // Show the canvas for debugging
+               showPatches: debugMode, // Show detected patches
+               showFoundPatches: debugMode, // Show found patches
+               showSkeleton: false,
+               showLabels: debugMode, // Show labels for debugging
+               showPatchLabels: false,
+               showRemainingPatchLabels: false,
+               boxFromPatches: {
+                 showTransformed: false,
+                 showTransformedBox: false,
+                 showBB: debugMode // Show bounding boxes
+               }
+             }
+           },
+           locate: true,
+           frequency: 5, // Scan every 5 frames for better accuracy
+           numOfWorkers: 4 // Use more workers for better performance
+         }, function(err) {
+           if (err) {
+             console.error('QuaggaJS initialization failed:', err);
+             showToast('Scanner initialization failed: ' + err.message, 'error');
+             return;
+           }
+           
+           console.log('QuaggaJS initialized successfully');
+           showToast('Scanner started successfully!', 'success');
+           isScanning = true;
+           
+           // Start scanning
+           Quagga.start();
+           
+           // Add visual feedback
+           video.classList.add('testing');
+           video.classList.remove('error');
+           
+           // Log video element status
+           console.log('Video element status:', {
+             display: video.style.display,
+             srcObject: !!video.srcObject,
+             videoWidth: video.videoWidth,
+             videoHeight: video.videoHeight,
+             readyState: video.readyState
+           });
+         });
+         
+         // Handle successful scans with improved validation
+         Quagga.onDetected(function(result) {
+           const code = result.codeResult.code;
+           const confidence = result.codeResult.confidence;
+           const format = result.codeResult.format;
+           
+           if (debugMode) {
+             console.log('=== BARCODE DETECTION DEBUG ===');
+             console.log('Raw result:', result);
+             console.log('Code:', code);
+             console.log('Confidence:', confidence);
+             console.log('Format:', format);
+             console.log('==============================');
+           } else {
+             console.log('Barcode detected:', {
+               code: code,
+               confidence: confidence,
+               format: format
+             });
+           }
+           
+           // Validate the detected code
+           const validation = validateBarcode(code);
+           if (!validation.valid) {
+             console.log('Invalid barcode detected:', code, 'reason:', validation.reason);
+             return;
+           }
+           
+           // Check confidence level (higher is better)
+           if (confidence < 0.3) {
+             console.log('Low confidence barcode detected:', code, 'confidence:', confidence);
+             showToast(`Low confidence: ${code} (${Math.round(confidence * 100)}%)`, 'warning');
+             return;
+           }
+           
+           // Use the cleaned code if available
+           const finalCode = validation.cleanCode || code;
+           
+           const now = Date.now();
+           // Deduplicate rapid repeats
+           if (finalCode && (finalCode !== lastText || now - lastAt > 1500)) {
+             lastText = finalCode;
+             lastAt = now;
+             
+             console.log('Processing barcode:', finalCode, 'confidence:', confidence, 'format:', format, 'validation:', validation);
+             postScan(finalCode);
+             showToast(`Barcode detected: ${finalCode} (${Math.round(confidence * 100)}% confidence)`, 'success');
+             
+             // Add visual feedback
+             video.style.border = '3px solid #4CAF50';
+             setTimeout(() => {
+               video.style.border = '';
+             }, 2000);
+           }
+         });
+         
+         showToast('Scanner started successfully!', 'success');
+         console.log('Scanning started successfully');
+         
+       } catch (e) {
+         console.error('Scanning start failed:', e);
+         showToast('Failed to start scanning: ' + e.message, 'error');
+       }
+     }
+
+         async function stopScanning() {
+       if (isScanning) {
+         try {
+           // Stop QuaggaJS
+           Quagga.stop();
+           isScanning = false;
+           
+           // Stop the video stream
+           if (currentStream) {
+             currentStream.getTracks().forEach(track => track.stop());
+             currentStream = null;
+           }
+           
+           // Clear video element
+           video.srcObject = null;
+           video.style.display = 'none';
+           
+           // Remove visual feedback
+           video.classList.remove('testing', 'error');
+           
+           showToast('Scanner stopped');
+           console.log('Scanner stopped');
+         } catch (e) {
+           console.error('Error stopping scanner:', e);
+         }
+       }
+     }
     
-    async function recoverVideoStream() {
-      console.log('Attempting to recover video stream...');
-      if (currentStream && currentStream.active) {
-        try {
-          // Reconnect the video element to the existing stream
-          video.srcObject = currentStream;
-          await new Promise(resolve => {
-            video.onloadedmetadata = resolve;
-            video.onerror = () => resolve();
-            // Timeout after 3 seconds
-            setTimeout(resolve, 3000);
-          });
-          
-          if (video.readyState >= 2) {
-            console.log('Video stream recovered successfully');
-            showToast('Video stream recovered!', 'success');
-            return true;
-          }
-        } catch (e) {
-          console.log('Video recovery failed:', e);
-        }
-      }
-      
-      // If recovery failed, do full restart
-      console.log('Recovery failed, doing full restart...');
-      await restartVideo();
-      return false;
-    }
+    
 
-    async function captureAndDecode() {
-      try {
-        if (!video.srcObject) {
-          showToast('No video stream available', 'error');
-          return;
-        }
-        
-        showToast('Capturing frame...', 'warning');
-        console.log('Capturing frame for manual decode...');
-        
-        // Check if video stream is still active
-        if (video.readyState === 0) {
-          showToast('Video stream not ready, restarting...', 'warning');
-          await restartVideo();
-          return;
-        }
-        
-        // Create a canvas to capture the current video frame
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        // Draw the current video frame to canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        console.log('Frame captured, dimensions:', canvas.width, 'x', canvas.height);
-        
-        // Use QuaggaJS to decode the captured frame
-        try {
-          const result = await new Promise((resolve, reject) => {
-            Quagga.decodeSingle({
-              src: canvas.toDataURL(),
-              numOfWorkers: 0,
-              inputStream: {
-                size: 800
-              },
-              decoder: {
-                readers: [
-                  "code_128_reader",
-                  "ean_reader",
-                  "ean_8_reader",
-                  "code_39_reader",
-                  "code_39_vin_reader",
-                  "codabar_reader",
-                  "upc_reader",
-                  "upc_e_reader",
-                  "i2of5_reader"
-                ]
-              },
-              locate: true
-            }, function(result) {
-              if (result && result.codeResult) {
-                resolve(result);
-              } else {
-                reject(new Error('No barcode found'));
-              }
-            });
-          });
-          
-          const code = result.codeResult.code;
-          console.log('Manual decode successful:', code);
-          showToast(`Barcode detected: ${code}`, 'success');
-          postScan(code);
-          
-        } catch (e) {
-          console.log('Manual decode failed:', e);
-          showToast('No barcode found in captured frame', 'warning');
-        }
-        
-        // Check if video stream is still working after capture
-        setTimeout(async () => {
-          if (!video.srcObject || video.readyState === 0) {
-            console.log('Video stream interrupted after capture, attempting recovery...');
-            await recoverVideoStream();
-          }
-        }, 2000);
-        
-      } catch (e) {
-        console.error('Capture failed:', e);
-        showToast('Capture failed: ' + e.message, 'error');
-        
-        // Only restart if absolutely necessary
-        if (!video.srcObject && !currentStream) {
-          console.log('Complete stream loss, attempting recovery...');
-          await recoverVideoStream();
-        }
-      }
-    }
-
-    startBtn.addEventListener('click', startScanning);
-    stopBtn.addEventListener('click', stopScanning);
-    stopVideoBtn.addEventListener('click', stopVideo);
-    restartVideoBtn.addEventListener('click', restartVideo);
-    recoverVideoBtn.addEventListener('click', recoverVideoStream);
-    permissionBtn.addEventListener('click', requestCameraPermission);
-    testVideoBtn.addEventListener('click', testVideo);
-    testBarcodeBtn.addEventListener('click', testBarcode);
-    generateTestBarcodeBtn.addEventListener('click', generateTestBarcode);
-    captureBtn.addEventListener('click', captureAndDecode);
-    exportFramesBtn.addEventListener('click', exportFailedFrames);
-    exportStatsBtn.addEventListener('click', exportFrameStats);
-    debugToggleBtn.addEventListener('click', toggleDebug);
+         startBtn.addEventListener('click', startScanning);
+     stopBtn.addEventListener('click', stopScanning);
+     
+     // Debug mode toggle
+     document.getElementById('debugBtn').addEventListener('click', () => {
+       debugMode = !debugMode;
+       const debugBtn = document.getElementById('debugBtn');
+       debugBtn.textContent = debugMode ? '🔧 Debug Mode: ON' : '🔧 Debug Mode: OFF';
+       debugBtn.className = debugMode ? 'success' : 'secondary';
+       
+       if (debugMode) {
+         showToast('Debug mode enabled - check console for detailed logs', 'info');
+       } else {
+         showToast('Debug mode disabled', 'info');
+       }
+     });
     
     manualBtn.addEventListener('click', () => {
       const val = (manualInput.value || '').trim();
@@ -1193,52 +1184,397 @@
       manualInput.value = '';
     });
 
-    newItemForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+         newItemForm.addEventListener('submit', async (e) => {
+       e.preventDefault();
+       
+               const itemNameInput = document.getElementById('itemName');
+        const itemName = itemNameInput.value.trim();
+        const itemGame = document.getElementById('itemGame').value || null;
+        const itemSet = document.getElementById('itemSet').value || null;
+        const itemBrand = document.getElementById('itemBrand').value || null;
+        const itemQuantity = parseInt(document.getElementById('itemQuantity').value) || 1;
+        const itemPrice = parseFloat(document.getElementById('itemPrice').value) || null;
+        const itemLocation = document.getElementById('itemLocation').value || null;
+        const itemDescription = document.getElementById('itemDescription').value || null;
+        const itemNotes = document.getElementById('itemNotes').value || null;
+
+       if (!itemName) {
+         showToast('Item name cannot be empty.', 'error');
+         return;
+       }
+
+       if (!pendingBarcode) {
+         showToast('No barcode found. Please scan again.', 'error');
+         return;
+       }
+
+               const formData = {
+          barcode: pendingBarcode,
+          name: itemName,
+          game: itemGame,
+          set_name: itemSet,
+          brand: itemBrand,
+          quantity: itemQuantity,
+          location: itemLocation,
+          notes: itemNotes,
+          price: itemPrice,
+          description: itemDescription,
+        };
+       
+       await createNewItem(formData);
+     });
+
+     editItemForm.addEventListener('submit', async (e) => {
+       e.preventDefault();
+       
+               const itemNameInput = document.getElementById('editItemName');
+        const itemName = itemNameInput.value.trim();
+        const itemGame = document.getElementById('editItemGame').value || null;
+        const itemSet = document.getElementById('editItemSet').value || null;
+        const itemBrand = document.getElementById('editItemBrand').value || null;
+        const itemQuantity = parseInt(document.getElementById('editItemQuantity').value) || 1;
+        const itemPrice = parseFloat(document.getElementById('editItemPrice').value) || null;
+        const itemLocation = document.getElementById('editItemLocation').value || null;
+        const itemDescription = document.getElementById('editItemDescription').value || null;
+        const itemNotes = document.getElementById('editItemNotes').value || null;
+
+       if (!itemName) {
+         showToast('Item name cannot be empty.', 'error');
+         return;
+       }
+
+               const formData = {
+          name: itemName,
+          game: itemGame,
+          set_name: itemSet,
+          brand: itemBrand,
+          quantity: itemQuantity,
+          location: itemLocation,
+          notes: itemNotes,
+          price: itemPrice,
+          description: itemDescription,
+        };
+       
+       await updateItem(formData);
+     });
+
+         // Close modal when clicking outside
+     newItemModal.addEventListener('click', (e) => {
+       if (e.target === newItemModal) {
+         closeNewItemModal();
+       }
+     });
+
+     editItemModal.addEventListener('click', (e) => {
+       if (e.target === editItemModal) {
+         closeEditItemModal();
+       }
+     });
+
+         // Inventory management buttons
+     document.getElementById('viewInventoryBtn').addEventListener('click', viewInventory);
+     document.getElementById('searchInventoryBtn').addEventListener('click', searchInventory);
+     document.getElementById('exportInventoryBtn').addEventListener('click', exportInventory);
+     document.getElementById('closeInventoryBtn').addEventListener('click', closeInventoryInline);
+     
+     // Selection buttons
+     document.getElementById('selectAllBtn').addEventListener('click', toggleSelectAll);
+     document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedItems);
+     
+     // Refresh button
+     document.getElementById('refreshBtn').addEventListener('click', () => {
+       showToast('Refreshing page...', 'info');
+       setTimeout(() => {
+         window.location.reload();
+       }, 500);
+     });
+
+    // Inventory management functions
+    async function viewInventory() {
+      try {
+        console.log('View inventory button clicked');
+        showToast('Loading inventory...', 'info');
+        
+        console.log('Fetching from /api/items...');
+        const response = await fetch('/api/items');
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          console.error('Response not ok:', response.status, response.statusText);
+          throw new Error(`Failed to load inventory: ${response.status} ${response.statusText}`);
+        }
+        
+        const items = await response.json();
+        console.log('Items loaded:', items.length, 'items');
+        displayInventoryInline(items, 'My Card Inventory');
+      } catch (error) {
+        console.error('Error loading inventory:', error);
+        showToast(`Failed to load inventory: ${error.message}`, 'error');
+      }
+    }
+
+    async function searchInventory() {
+      const searchTerm = prompt('Enter search term (card name, game, set, etc.):');
+      if (!searchTerm) return;
       
-      const itemNameInput = document.getElementById('itemName');
-      const itemName = itemNameInput.value.trim();
-      const itemGame = document.getElementById('itemGame').value || null;
-      const itemSet = document.getElementById('itemSet').value || null;
-      const itemNumber = document.getElementById('itemNumber').value || null;
-      const itemQuantity = parseInt(document.getElementById('itemQuantity').value) || 1;
-      const itemPrice = parseFloat(document.getElementById('itemPrice').value) || null;
-      const itemLocation = document.getElementById('itemLocation').value || null;
-      const itemDescription = document.getElementById('itemDescription').value || null;
-      const itemNotes = document.getElementById('itemNotes').value || null;
-
-      if (!itemName) {
-        showToast('Item name cannot be empty.', 'error');
-        return;
+      try {
+        console.log('Search inventory button clicked, term:', searchTerm);
+        showToast('Searching...', 'info');
+        
+        const url = `/api/items?search=${encodeURIComponent(searchTerm)}`;
+        console.log('Fetching from:', url);
+        const response = await fetch(url);
+        console.log('Search response status:', response.status);
+        
+        if (!response.ok) {
+          console.error('Search response not ok:', response.status, response.statusText);
+          throw new Error(`Failed to search inventory: ${response.status} ${response.statusText}`);
+        }
+        
+        const items = await response.json();
+        console.log('Search results:', items.length, 'items');
+        displayInventoryInline(items, `Search Results: "${searchTerm}"`);
+      } catch (error) {
+        console.error('Error searching inventory:', error);
+        showToast(`Failed to search inventory: ${error.message}`, 'error');
       }
+    }
 
-      if (!pendingBarcode) {
-        showToast('No barcode found. Please scan again.', 'error');
-        return;
+    async function exportInventory() {
+      try {
+        showToast('Exporting data...', 'info');
+        const response = await fetch('/api/items');
+        if (!response.ok) throw new Error('Failed to export inventory');
+        
+        const items = await response.json();
+        
+        // Create CSV content
+        const csvContent = createCSV(items);
+        
+        // Download file
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `card-inventory-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showToast('Inventory exported successfully!', 'success');
+      } catch (error) {
+        console.error('Error exporting inventory:', error);
+        showToast('Failed to export inventory', 'error');
       }
+    }
 
-      const formData = {
-        barcode: pendingBarcode,
-        name: itemName,
-        game: itemGame,
-        set_name: itemSet,
-        number_in_set: itemNumber,
-        quantity: itemQuantity,
-        location: itemLocation,
-        notes: itemNotes,
-        price: itemPrice,
-        description: itemDescription,
-      };
+         function createCSV(items) {
+       const headers = ['ID', 'Name', 'Game', 'Set', 'Brand', 'Quantity', 'Location', 'Price', 'Description', 'Notes', 'Added'];
+       const rows = items.map(item => [
+         item.id,
+         item.name || '',
+         item.game || '',
+         item.set_name || '',
+         item.brand || '',
+         item.quantity || 0,
+         item.location || '',
+         item.price || '',
+         item.description || '',
+         item.notes || '',
+         item.created_at ? item.created_at.split('T')[0] : ''
+       ]);
       
-      await createNewItem(formData);
-    });
+      return [headers, ...rows].map(row => 
+        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+    }
 
-    // Close modal when clicking outside
-    newItemModal.addEventListener('click', (e) => {
-      if (e.target === newItemModal) {
-        closeNewItemModal();
+                   function displayInventoryInline(items, title) {
+        // Store items globally for selection functionality
+        allItems = items;
+        selectedItems.clear();
+        
+        // Get the inventory section elements
+        const inventorySection = document.getElementById('inventorySection');
+        const inventoryTitle = document.getElementById('inventoryTitle');
+        const inventoryCount = document.getElementById('inventoryCount');
+        const inventoryList = document.getElementById('inventoryList');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        
+        // Update the title and count
+        inventoryTitle.textContent = title;
+        inventoryCount.textContent = `${items.length} items found`;
+        
+        // Reset selection controls
+        selectAllBtn.textContent = '☐ Select All';
+        deleteSelectedBtn.style.display = 'none';
+        document.getElementById('selectedCount').textContent = '0';
+        
+        // Clear the list and add items
+        inventoryList.innerHTML = '';
+        
+        if (items.length === 0) {
+          inventoryList.innerHTML = '<p>No items found in inventory.</p>';
+        } else {
+          items.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'inventory-item';
+            itemElement.dataset.itemId = item.id;
+            itemElement.innerHTML = `
+              <div class="item-header">
+                <div class="item-selection">
+                  <input type="checkbox" class="item-checkbox" id="checkbox-${item.id}" onchange="toggleItemSelection(${item.id})">
+                  <strong>${item.name || 'Unknown Card'}</strong>
+                </div>
+                <div class="item-actions">
+                  <span class="quantity">Qty: ${item.quantity}</span>
+                  <button class="edit-btn" onclick="editItem(${item.id})" title="Edit this card">✏️ Edit</button>
+                </div>
+              </div>
+                             <div class="item-details">
+                 <span class="game">${item.game || 'Unknown Game'}</span>
+                 ${item.set_name ? `<span class="set">${item.set_name}</span>` : ''}
+                 ${item.brand ? `<span class="brand">${item.brand}</span>` : ''}
+                 ${item.price ? `<span class="price">$${parseFloat(item.price).toFixed(2)}</span>` : ''}
+               </div>
+              ${item.location ? `<div class="location">📍 ${item.location}</div>` : ''}
+              ${item.description ? `<div class="description">${item.description}</div>` : ''}
+            `;
+            inventoryList.appendChild(itemElement);
+          });
+        }
+        
+        // Show the inventory section
+        inventorySection.style.display = 'block';
+        
+        // Scroll to the inventory section
+        inventorySection.scrollIntoView({ behavior: 'smooth' });
       }
-    });
+
+         function closeInventoryInline() {
+       const inventorySection = document.getElementById('inventorySection');
+       inventorySection.style.display = 'none';
+     }
+
+           // Global function for edit button onclick
+      function editItem(itemId) {
+        showEditItemModal(itemId);
+      }
+
+      // Selection functions
+      function toggleItemSelection(itemId) {
+        const checkbox = document.getElementById(`checkbox-${itemId}`);
+        const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+        
+        if (checkbox.checked) {
+          selectedItems.add(itemId);
+          itemElement.classList.add('selected');
+        } else {
+          selectedItems.delete(itemId);
+          itemElement.classList.remove('selected');
+        }
+        
+        updateSelectionUI();
+      }
+
+      function toggleSelectAll() {
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        const itemElements = document.querySelectorAll('.inventory-item');
+        
+        if (selectedItems.size === allItems.length) {
+          // Deselect all
+          selectedItems.clear();
+          checkboxes.forEach(checkbox => checkbox.checked = false);
+          itemElements.forEach(item => item.classList.remove('selected'));
+          selectAllBtn.textContent = '☐ Select All';
+        } else {
+          // Select all
+          selectedItems.clear();
+          allItems.forEach(item => selectedItems.add(item.id));
+          checkboxes.forEach(checkbox => checkbox.checked = true);
+          itemElements.forEach(item => item.classList.add('selected'));
+          selectAllBtn.textContent = '☑ Deselect All';
+        }
+        
+        updateSelectionUI();
+      }
+
+      function updateSelectionUI() {
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const selectedCount = document.getElementById('selectedCount');
+        
+        selectedCount.textContent = selectedItems.size;
+        
+        if (selectedItems.size > 0) {
+          deleteSelectedBtn.style.display = 'inline-block';
+        } else {
+          deleteSelectedBtn.style.display = 'none';
+        }
+        
+        // Update select all button text
+        if (selectedItems.size === allItems.length && allItems.length > 0) {
+          selectAllBtn.textContent = '☑ Deselect All';
+        } else {
+          selectAllBtn.textContent = '☐ Select All';
+        }
+      }
+
+      async function deleteSelectedItems() {
+        if (selectedItems.size === 0) {
+          showToast('No items selected', 'warning');
+          return;
+        }
+
+        const itemNames = allItems
+          .filter(item => selectedItems.has(item.id))
+          .map(item => item.name || 'Unknown Card');
+
+        const confirmed = confirm(
+          `Are you sure you want to delete ${selectedItems.size} item(s)?\n\n` +
+          `Items to delete:\n${itemNames.slice(0, 5).join('\n')}${itemNames.length > 5 ? '\n... and ' + (itemNames.length - 5) + ' more' : ''}\n\n` +
+          `This action cannot be undone.`
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          showToast(`Deleting ${selectedItems.size} items...`, 'warning');
+          
+          // Delete items one by one
+          const deletePromises = Array.from(selectedItems).map(itemId =>
+            fetch(`/api/items/${itemId}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' }
+            })
+          );
+
+          const results = await Promise.allSettled(deletePromises);
+          
+          // Check for errors
+          const errors = results.filter(result => result.status === 'rejected' || (result.value && !result.value.ok));
+          
+          if (errors.length > 0) {
+            console.error('Some deletions failed:', errors);
+            showToast(`Deleted ${selectedItems.size - errors.length} items, ${errors.length} failed`, 'warning');
+          } else {
+            showToast(`Successfully deleted ${selectedItems.size} items`, 'success');
+          }
+
+          // Clear selection and refresh inventory
+          selectedItems.clear();
+          await viewInventory();
+          
+        } catch (error) {
+          console.error('Error deleting items:', error);
+          showToast('Failed to delete items', 'error');
+        }
+      }
   </script>
 </body>
 </html>

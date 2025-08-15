@@ -16,7 +16,7 @@ class Item(Base):
     name = Column(String(255), nullable=True)
     game = Column(String(64), nullable=True)
     set_name = Column(String(128), nullable=True)
-    number_in_set = Column(String(64), nullable=True)
+    brand = Column(String(64), nullable=True)
     quantity = Column(Integer, nullable=False, default=0)
     location = Column(String(128), nullable=True)
     notes = Column(Text, nullable=True)

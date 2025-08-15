@@ -9,7 +9,7 @@ class ItemBase(BaseModel):
     name: Optional[str] = None
     game: Optional[str] = None
     set_name: Optional[str] = None
-    number_in_set: Optional[str] = None
+    brand: Optional[str] = None
     quantity: Optional[int] = 0
     location: Optional[str] = None
     notes: Optional[str] = None
@@ -25,7 +25,7 @@ class ItemUpdate(BaseModel):
     name: Optional[str] = None
     game: Optional[str] = None
     set_name: Optional[str] = None
-    number_in_set: Optional[str] = None
+    brand: Optional[str] = None
     quantity: Optional[int] = None
     location: Optional[str] = None
     notes: Optional[str] = None
@@ -62,7 +62,7 @@ class NewItemCreate(BaseModel):
     name: Optional[str] = None
     game: Optional[str] = None
     set_name: Optional[str] = None
-    number_in_set: Optional[str] = None
+    brand: Optional[str] = None
     quantity: int = 1
     location: Optional[str] = None
     notes: Optional[str] = None
