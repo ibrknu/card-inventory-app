@@ -16,13 +16,13 @@ def list_items(
     db: Session = Depends(get_db)
 ):
     if search:
-        return crud.search_items(db, search, limit=limit, offset=offset)
-    return crud.list_items(db, limit=limit, offset=offset)
+        return crud.get_items(db, skip=offset, limit=limit, search=search)
+    return crud.get_items(db, skip=offset, limit=limit)
 
 
 @router.get("/{item_id}", response_model=schemas.ItemRead)
 def get_item(item_id: int, db: Session = Depends(get_db)):
-    item = crud.get_item_by_id(db, item_id)
+    item = crud.get_item(db, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
@@ -34,35 +34,33 @@ def create_item(payload: schemas.ItemCreate, db: Session = Depends(get_db)):
         existing = crud.get_item_by_barcode(db, payload.barcode)
         if existing:
             raise HTTPException(status_code=409, detail="Item with this barcode already exists")
-    item = crud.create_item(
-        db,
-        barcode=payload.barcode,
-        name=payload.name,
-        game=payload.game,
-        set_name=payload.set_name,
-        brand=payload.brand,
-        quantity=payload.quantity or 0,
-        location=payload.location,
-        notes=payload.notes,
-        price=float(payload.price) if payload.price else None,
-        description=payload.description,
-    )
+    
+    item_data = payload.dict()
+    if payload.price:
+        item_data["price"] = float(payload.price)
+    
+    item = crud.create_item(db, **item_data)
     return item
 
 
 @router.patch("/{item_id}", response_model=schemas.ItemRead)
 def update_item(item_id: int, payload: schemas.ItemUpdate, db: Session = Depends(get_db)):
-    item = crud.get_item_by_id(db, item_id)
+    item = crud.get_item(db, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    updated = crud.update_item(db, item, **payload.model_dump(exclude_unset=True))
+    
+    update_data = payload.dict(exclude_unset=True)
+    if payload.price:
+        update_data["price"] = float(payload.price)
+    
+    updated = crud.update_item(db, item, **update_data)
     return updated
 
 
 @router.delete("/{item_id}")
 def delete_item(item_id: int, db: Session = Depends(get_db)):
-    item = crud.get_item_by_id(db, item_id)
+    item = crud.get_item(db, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    crud.delete_item(db, item)
+    crud.delete_item(db, item_id)
     return {"message": "Item deleted successfully"}

@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from .db import Base, engine
 from .routes import items as items_routes
 from .routes import scan as scan_routes
+from .routes import batches as batches_routes
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -25,6 +26,7 @@ app.add_middleware(
 
 app.include_router(items_routes.router)
 app.include_router(scan_routes.router)
+app.include_router(batches_routes.router)
 
 
 @app.on_event("startup")

@@ -395,14 +395,23 @@
       </div>
     </section>
 
-    <section class="card">
-      <h3>Inventory Management</h3>
-      <div class="button-grid">
-        <button id="viewInventoryBtn" class="success">📊 View My Inventory</button>
-                 <button id="searchInventoryBtn" class="secondary">🔍 Search</button>
-        <button id="exportInventoryBtn" class="secondary">📤 Export Data</button>
-      </div>
-    </section>
+         <section class="card">
+       <h3>Inventory Management</h3>
+       <div class="button-grid">
+         <button id="viewInventoryBtn" class="success">📊 View My Inventory</button>
+         <button id="searchInventoryBtn" class="secondary">🔍 Search</button>
+         <button id="exportInventoryBtn" class="secondary">📤 Export Data</button>
+       </div>
+     </section>
+
+     <section class="card">
+       <h3>Batch Management</h3>
+       <div class="button-grid">
+         <button id="createBatchBtn" class="success">📦 Create New Batch</button>
+         <button id="viewBatchesBtn" class="secondary">📋 View Batches</button>
+         <button id="activeBatchBtn" class="secondary" style="display: none;">🎯 Active Batch: <span id="activeBatchName">None</span></button>
+       </div>
+     </section>
 
          <section class="card">
        <h3>Tips</h3>
@@ -445,7 +454,7 @@
    <div id="newItemModal" class="modal">
      <div class="modal-content">
        <span class="close" onclick="closeNewItemModal()">&times;</span>
-       <h3>Add New Item</h3>
+       <h3 id="newItemModalTitle">Add New Item</h3>
        <p class="muted">Barcode: <span id="newItemBarcode"></span></p>
        
        <form id="newItemForm">
@@ -492,10 +501,14 @@
            <input type="number" id="itemPrice" step="0.01" min="0" placeholder="0.00">
          </div>
          
-         <div class="form-group">
-           <label for="itemLocation">Location</label>
-           <input type="text" id="itemLocation" placeholder="Binder, box, etc.">
-         </div>
+                   <div class="form-group">
+            <label for="itemLocation">Location</label>
+            <select id="itemLocation">
+              <option value="">Select location...</option>
+              <option value="Storage">Storage</option>
+              <option value="Show">Show</option>
+            </select>
+          </div>
          
          <div class="form-group">
            <label for="itemDescription">Description</label>
@@ -568,10 +581,14 @@
            <input type="number" id="editItemPrice" step="0.01" min="0" placeholder="0.00">
          </div>
          
-         <div class="form-group">
-           <label for="editItemLocation">Location</label>
-           <input type="text" id="editItemLocation" placeholder="Binder, box, etc.">
-         </div>
+                   <div class="form-group">
+            <label for="editItemLocation">Location</label>
+            <select id="editItemLocation">
+              <option value="">Select location...</option>
+              <option value="Storage">Storage</option>
+              <option value="Show">Show</option>
+            </select>
+          </div>
          
          <div class="form-group">
            <label for="editItemDescription">Description</label>
@@ -594,6 +611,112 @@
      </div>
    </div>
 
+       <!-- Quantity Update Modal -->
+    <div id="quantityUpdateModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeQuantityUpdateModal()">&times;</span>
+        <h3>Update Inventory</h3>
+        <p class="muted">Barcode: <span id="quantityUpdateBarcode"></span></p>
+        <p class="muted">Item: <span id="quantityUpdateItemName"></span></p>
+        <p class="muted">Current Quantity: <span id="quantityUpdateCurrentQty"></span></p>
+        
+        <form id="quantityUpdateForm">
+          <div class="form-group">
+            <label>Action</label>
+            <div style="display: flex; gap: 12px; margin-top: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="action" value="add" checked style="transform: scale(1.2);">
+                <span style="color: #27ae60; font-weight: 600;">➕ Add to Inventory</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="action" value="sell" style="transform: scale(1.2);">
+                <span style="color: #e74c3c; font-weight: 600;">💰 Sell from Inventory</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="quantityUpdateAmount">Quantity</label>
+            <input type="number" id="quantityUpdateAmount" value="1" min="1" placeholder="Enter quantity">
+          </div>
+          
+          <div class="form-group" style="display: flex; gap: 8px; justify-content: space-between;">
+            <button type="submit" class="success">Update Inventory</button>
+            <button type="button" class="secondary" onclick="closeQuantityUpdateModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Create Batch Modal -->
+    <div id="createBatchModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeCreateBatchModal()">&times;</span>
+        <h3>Create New Batch</h3>
+        
+        <form id="createBatchForm">
+          <div class="form-group">
+            <label for="batchName">Batch Name</label>
+            <input type="text" id="batchName" placeholder="Enter batch name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="batchDescription">Description</label>
+            <textarea id="batchDescription" placeholder="Optional description..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="batchTargetLocation">Target Location</label>
+            <select id="batchTargetLocation" required>
+              <option value="">Select target location...</option>
+              <option value="Storage">Storage</option>
+              <option value="Show">Show</option>
+            </select>
+          </div>
+          
+          <div class="form-group" style="display: flex; gap: 8px; justify-content: space-between;">
+            <button type="submit" class="success">Create Batch</button>
+            <button type="button" class="secondary" onclick="closeCreateBatchModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Batch List Modal -->
+    <div id="batchListModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeBatchListModal()">&times;</span>
+        <h3>Batch Management</h3>
+        
+        <div id="batchList" class="inventory-list">
+          <!-- Batches will be displayed here -->
+        </div>
+        
+        <div class="button-grid">
+          <button type="button" class="secondary" onclick="closeBatchListModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Details Modal -->
+    <div id="batchDetailsModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeBatchDetailsModal()">&times;</span>
+        <h3 id="batchDetailsTitle">Batch Details</h3>
+        <p class="muted" id="batchDetailsInfo"></p>
+        
+        <div id="batchItemsList" class="inventory-list">
+          <!-- Batch items will be displayed here -->
+        </div>
+        
+        <div class="button-grid">
+          <button id="transferBatchBtn" class="success" style="display: none;">✅ Transfer Batch</button>
+          <button id="cancelBatchBtn" class="danger" style="display: none;">❌ Cancel Batch</button>
+          <button type="button" class="secondary" onclick="closeBatchDetailsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
   <script>
          const startBtn = document.getElementById('startBtn');
      const stopBtn = document.getElementById('stopBtn');
@@ -607,6 +730,21 @@
      const editItemModal = document.getElementById('editItemModal');
      const editItemForm = document.getElementById('editItemForm');
      const editItemBarcode = document.getElementById('editItemBarcode');
+           const quantityUpdateModal = document.getElementById('quantityUpdateModal');
+      const quantityUpdateForm = document.getElementById('quantityUpdateForm');
+      const quantityUpdateBarcode = document.getElementById('quantityUpdateBarcode');
+      const quantityUpdateItemName = document.getElementById('quantityUpdateItemName');
+      const quantityUpdateCurrentQty = document.getElementById('quantityUpdateCurrentQty');
+      
+      // Batch management elements
+      const createBatchModal = document.getElementById('createBatchModal');
+      const createBatchForm = document.getElementById('createBatchForm');
+      const batchListModal = document.getElementById('batchListModal');
+      const batchDetailsModal = document.getElementById('batchDetailsModal');
+      const batchList = document.getElementById('batchList');
+      const batchItemsList = document.getElementById('batchItemsList');
+      const activeBatchBtn = document.getElementById('activeBatchBtn');
+      const activeBatchName = document.getElementById('activeBatchName');
 
          let codeReader = null;
      let currentStream = null;
@@ -614,12 +752,16 @@
       let lastAt = 0;
       let pendingBarcode = null;
       let isScanning = false;
-      let selectedItems = new Set();
-      let allItems = [];
-      let debugMode = false;
-      let lastProcessedBarcode = '';
-      let lastProcessedTime = 0;
-      const BARCODE_COOLDOWN_MS = 3000; // 3 second cooldown between same barcode scans
+             let selectedItems = new Set();
+       let allItems = [];
+       let debugMode = false;
+       let lastProcessedBarcode = '';
+       let lastProcessedTime = 0;
+       const BARCODE_COOLDOWN_MS = 3000; // 3 second cooldown between same barcode scans
+       
+       // Batch management variables
+       let activeBatch = null;
+       let allBatches = [];
     
     
 
@@ -778,10 +920,23 @@
       document.getElementById('itemName').focus();
     }
 
+    function showNewItemModalForBatch(barcode, batch) {
+      pendingBarcode = barcode;
+      newItemBarcode.textContent = barcode;
+      // Update modal title to indicate batch mode
+      document.getElementById('newItemModalTitle').textContent = `Add New Item to Batch: ${batch.name}`;
+      // Set the location to the batch target location
+      document.getElementById('itemLocation').value = batch.target_location;
+      newItemModal.style.display = 'block';
+      document.getElementById('itemName').focus();
+    }
+
          function closeNewItemModal() {
        newItemModal.style.display = 'none';
        pendingBarcode = null;
        newItemForm.reset();
+       // Reset modal title
+       document.getElementById('newItemModalTitle').textContent = 'Add New Item';
      }
 
      function showEditItemModal(itemId) {
@@ -817,6 +972,234 @@
        editItemForm.reset();
        delete editItemForm.dataset.itemId;
      }
+
+     function showQuantityUpdateModal(barcode, itemName, currentQuantity) {
+       pendingBarcode = barcode;
+       quantityUpdateBarcode.textContent = barcode;
+       quantityUpdateItemName.textContent = itemName || 'Unknown Item';
+       quantityUpdateCurrentQty.textContent = currentQuantity || 0;
+       quantityUpdateModal.style.display = 'block';
+       document.getElementById('quantityUpdateAmount').focus();
+     }
+
+           function closeQuantityUpdateModal() {
+        quantityUpdateModal.style.display = 'none';
+        pendingBarcode = null;
+        quantityUpdateForm.reset();
+        document.getElementById('quantityUpdateAmount').value = '1';
+      }
+
+      // Batch management functions
+      function showCreateBatchModal() {
+        createBatchModal.style.display = 'block';
+        document.getElementById('batchName').focus();
+      }
+
+      function closeCreateBatchModal() {
+        createBatchModal.style.display = 'none';
+        createBatchForm.reset();
+      }
+
+      function showBatchListModal() {
+        batchListModal.style.display = 'block';
+        loadBatches();
+      }
+
+      function closeBatchListModal() {
+        batchListModal.style.display = 'none';
+      }
+
+      function showBatchDetailsModal(batchId) {
+        batchDetailsModal.style.display = 'block';
+        loadBatchDetails(batchId);
+      }
+
+      function closeBatchDetailsModal() {
+        batchDetailsModal.style.display = 'none';
+      }
+
+      async function createBatch(formData) {
+        try {
+          console.log('Creating batch:', formData);
+          
+          const res = await fetch('/api/batches/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+          
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+          }
+          
+          const batch = await res.json();
+          showToast(`Batch created: ${batch.name}`);
+          closeCreateBatchModal();
+          
+          // Set as active batch
+          setActiveBatch(batch);
+          
+        } catch (e) {
+          console.error('Error creating batch:', e);
+          showToast(`Error: ${e.message}`, 'error');
+        }
+      }
+
+      async function loadBatches() {
+        try {
+          const res = await fetch('/api/batches/?active_only=false');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          
+          const batches = await res.json();
+          allBatches = batches;
+          displayBatches(batches);
+          
+        } catch (e) {
+          console.error('Error loading batches:', e);
+          showToast('Error loading batches', 'error');
+        }
+      }
+
+      function displayBatches(batches) {
+        batchList.innerHTML = '';
+        
+        if (batches.length === 0) {
+          batchList.innerHTML = '<p>No batches found.</p>';
+          return;
+        }
+        
+        batches.forEach(batch => {
+          const batchElement = document.createElement('div');
+          batchElement.className = 'inventory-item';
+          batchElement.innerHTML = `
+            <div class="item-header">
+              <div>
+                <strong>${batch.name}</strong>
+                ${batch.is_active ? '<span style="color: #27ae60; font-size: 0.8em;">● Active</span>' : '<span style="color: #e74c3c; font-size: 0.8em;">● Inactive</span>'}
+              </div>
+              <div class="item-actions">
+                <span class="quantity">${batch.item_count || 0} items</span>
+                <button class="edit-btn" onclick="showBatchDetailsModal(${batch.id})" title="View batch details">👁️ View</button>
+              </div>
+            </div>
+            <div class="item-details">
+              <span class="game">Target: ${batch.target_location}</span>
+              ${batch.description ? `<span class="set">${batch.description}</span>` : ''}
+            </div>
+            <div class="location">Created: ${new Date(batch.created_at).toLocaleDateString()}</div>
+          `;
+          batchList.appendChild(batchElement);
+        });
+      }
+
+      async function loadBatchDetails(batchId) {
+        try {
+          const res = await fetch(`/api/batches/${batchId}`);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          
+          const batch = await res.json();
+          displayBatchDetails(batch);
+          
+        } catch (e) {
+          console.error('Error loading batch details:', e);
+          showToast('Error loading batch details', 'error');
+        }
+      }
+
+      function displayBatchDetails(batch) {
+        document.getElementById('batchDetailsTitle').textContent = batch.name;
+        document.getElementById('batchDetailsInfo').textContent = 
+          `Target Location: ${batch.target_location} | Items: ${batch.items.length} | Created: ${new Date(batch.created_at).toLocaleDateString()}`;
+        
+        batchItemsList.innerHTML = '';
+        
+        if (batch.items.length === 0) {
+          batchItemsList.innerHTML = '<p>No items in this batch.</p>';
+        } else {
+          batch.items.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'inventory-item';
+            itemElement.innerHTML = `
+              <div class="item-header">
+                <strong>${item.name || 'Unknown Item'}</strong>
+                <span class="quantity">Qty: ${item.quantity}</span>
+              </div>
+              <div class="item-details">
+                <span class="game">${item.game || 'Unknown Game'}</span>
+                ${item.set_name ? `<span class="set">${item.set_name}</span>` : ''}
+                ${item.brand ? `<span class="brand">${item.brand}</span>` : ''}
+              </div>
+            `;
+            batchItemsList.appendChild(itemElement);
+          });
+        }
+        
+        // Show/hide action buttons based on batch status
+        const transferBtn = document.getElementById('transferBatchBtn');
+        const cancelBtn = document.getElementById('cancelBatchBtn');
+        
+        if (batch.is_active) {
+          transferBtn.style.display = 'inline-block';
+          cancelBtn.style.display = 'inline-block';
+          transferBtn.onclick = () => transferBatch(batch.id, 'transfer');
+          cancelBtn.onclick = () => transferBatch(batch.id, 'cancel');
+        } else {
+          transferBtn.style.display = 'none';
+          cancelBtn.style.display = 'none';
+        }
+      }
+
+      async function transferBatch(batchId, action) {
+        try {
+          const confirmed = confirm(
+            action === 'transfer' 
+              ? 'Are you sure you want to transfer this batch? This will move all items to their target location and deactivate the batch.'
+              : 'Are you sure you want to cancel this batch? This will remove all items from the batch and deactivate it.'
+          );
+          
+          if (!confirmed) return;
+          
+          const res = await fetch(`/api/batches/${batchId}/transfer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ batch_id: batchId, action: action })
+          });
+          
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+          }
+          
+          const result = await res.json();
+          showToast(result.message);
+          closeBatchDetailsModal();
+          
+          // Refresh batch list
+          if (batchListModal.style.display !== 'none') {
+            loadBatches();
+          }
+          
+        } catch (e) {
+          console.error('Error transferring batch:', e);
+          showToast(`Error: ${e.message}`, 'error');
+        }
+      }
+
+      function setActiveBatch(batch) {
+        activeBatch = batch;
+        if (batch) {
+          activeBatchName.textContent = batch.name;
+          activeBatchBtn.style.display = 'inline-block';
+        } else {
+          activeBatchName.textContent = 'None';
+          activeBatchBtn.style.display = 'none';
+        }
+      }
+
+      function clearActiveBatch() {
+        setActiveBatch(null);
+      }
 
            async function updateItem(formData) {
         const itemId = editItemForm.dataset.itemId;
@@ -898,52 +1281,143 @@
         }
       }
 
-    async function postScan(barcode) {
-      try {
-        const res = await fetch('/api/scan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ barcode, increment: 1 })
-        });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const result = await res.json();
-        
-        if (result.is_new) {
-          showToast(`New barcode detected: ${barcode}`, 'warning');
-          showNewItemModal(barcode);
-        } else {
-          showToast(`Added: ${result.item.name || result.item.barcode} (qty ${result.item.quantity})`);
+                   async function postScan(barcode) {
+        try {
+          // Check if there's an active batch
+          if (activeBatch) {
+            // Add item to batch
+            const res = await fetch(`/api/batches/${activeBatch.id}/scan`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                barcode: barcode, 
+                batch_id: activeBatch.id, 
+                quantity: 1 
+              })
+            });
+            
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+            }
+            
+            const result = await res.json();
+            
+            if (result.is_new) {
+              // New item - show modal for details
+              showToast(`New item for batch "${activeBatch.name}": ${barcode}`, 'warning');
+              showNewItemModalForBatch(barcode, activeBatch);
+            } else {
+              // Existing item added to batch
+              showToast(`Added to batch "${activeBatch.name}": ${result.item.name} (qty ${result.item.quantity})`);
+            }
+            return;
+          }
+          
+          // Regular scan flow (no active batch)
+          const res = await fetch('/api/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ barcode, increment: 1 })
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const result = await res.json();
+          
+          if (result.is_new) {
+            showToast(`New barcode detected: ${barcode}`, 'warning');
+            showNewItemModal(barcode);
+          } else {
+            // Show quantity update modal for existing items
+            showQuantityUpdateModal(barcode, result.item.name, result.item.quantity);
+          }
+        } catch (e) {
+          console.error(e);
+          showToast('Error adding item', 'error');
         }
-      } catch (e) {
-        console.error(e);
-        showToast('Error adding item', 'error');
       }
-    }
 
-    async function createNewItem(formData) {
-      try {
-        console.log('Submitting form data:', formData);
-        
-        const res = await fetch('/api/items/new', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          console.error('Server error:', errorData);
-          throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
-        }
-        
-        const item = await res.json();
-        showToast(`Added: ${item.name} (qty ${item.quantity})`);
-        closeNewItemModal();
-      } catch (e) {
-        console.error('Error creating item:', e);
-        showToast(`Error: ${e.message}`, 'error');
-      }
-    }
+         async function createNewItem(formData) {
+       try {
+         console.log('Submitting form data:', formData);
+         console.log('Barcode being processed:', formData.barcode);
+         
+         // Check if we're in batch mode
+         if (activeBatch) {
+           // Add item to batch with details
+           const res = await fetch(`/api/batches/${activeBatch.id}/add-item`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(formData)
+           });
+           
+           console.log('Response status:', res.status);
+           
+           if (!res.ok) {
+             const errorData = await res.json().catch(() => ({}));
+             console.error('Server error:', errorData);
+             throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+           }
+           
+           const item = await res.json();
+           console.log('Item created/updated in batch:', item);
+           showToast(`Added to batch "${activeBatch.name}": ${item.name} (qty ${item.quantity})`);
+           closeNewItemModal();
+         } else {
+           // Regular item creation
+           const res = await fetch('/api/items/new', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(formData)
+           });
+           
+           console.log('Response status:', res.status);
+           
+           if (!res.ok) {
+             const errorData = await res.json().catch(() => ({}));
+             console.error('Server error:', errorData);
+             throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+           }
+           
+           const item = await res.json();
+           console.log('Item created/updated:', item);
+           showToast(`Added: ${item.name} (qty ${item.quantity})`);
+           closeNewItemModal();
+         }
+       } catch (e) {
+         console.error('Error creating item:', e);
+         showToast(`Error: ${e.message}`, 'error');
+       }
+     }
+
+     async function updateItemQuantity(formData) {
+       try {
+         console.log('Updating quantity:', formData);
+         
+         const res = await fetch('/api/items/update-quantity', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(formData)
+         });
+         
+         console.log('Response status:', res.status);
+         
+         if (!res.ok) {
+           const errorData = await res.json().catch(() => ({}));
+           console.error('Server error:', errorData);
+           throw new Error(`HTTP ${res.status}: ${errorData.detail || 'Unknown error'}`);
+         }
+         
+         const item = await res.json();
+         console.log('Quantity updated:', item);
+         
+         const actionText = formData.action === 'add' ? 'Added' : 'Sold';
+         showToast(`${actionText} ${formData.quantity} of ${item.name} (new qty: ${item.quantity})`);
+         closeQuantityUpdateModal();
+       } catch (e) {
+         console.error('Error updating quantity:', e);
+         showToast(`Error: ${e.message}`, 'error');
+       }
+     }
 
     
 
@@ -1292,6 +1766,58 @@
        await updateItem(formData);
      });
 
+           quantityUpdateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const action = document.querySelector('input[name="action"]:checked').value;
+        const quantity = parseInt(document.getElementById('quantityUpdateAmount').value) || 1;
+
+        if (!pendingBarcode) {
+          showToast('No barcode found. Please scan again.', 'error');
+          return;
+        }
+
+        if (quantity <= 0) {
+          showToast('Quantity must be greater than 0.', 'error');
+          return;
+        }
+
+        const formData = {
+          barcode: pendingBarcode,
+          action: action,
+          quantity: quantity,
+        };
+        
+        await updateItemQuantity(formData);
+      });
+
+      // Batch form event listeners
+      createBatchForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const batchName = document.getElementById('batchName').value.trim();
+        const batchDescription = document.getElementById('batchDescription').value.trim();
+        const batchTargetLocation = document.getElementById('batchTargetLocation').value;
+
+        if (!batchName) {
+          showToast('Batch name is required.', 'error');
+          return;
+        }
+
+        if (!batchTargetLocation) {
+          showToast('Target location is required.', 'error');
+          return;
+        }
+
+        const formData = {
+          name: batchName,
+          description: batchDescription || null,
+          target_location: batchTargetLocation,
+        };
+        
+        await createBatch(formData);
+      });
+
          // Close modal when clicking outside
      newItemModal.addEventListener('click', (e) => {
        if (e.target === newItemModal) {
@@ -1305,11 +1831,45 @@
        }
      });
 
-         // Inventory management buttons
-     document.getElementById('viewInventoryBtn').addEventListener('click', viewInventory);
-     document.getElementById('searchInventoryBtn').addEventListener('click', searchInventory);
-     document.getElementById('exportInventoryBtn').addEventListener('click', exportInventory);
-     document.getElementById('closeInventoryBtn').addEventListener('click', closeInventoryInline);
+           quantityUpdateModal.addEventListener('click', (e) => {
+        if (e.target === quantityUpdateModal) {
+          closeQuantityUpdateModal();
+        }
+      });
+
+      // Batch modal close event listeners
+      createBatchModal.addEventListener('click', (e) => {
+        if (e.target === createBatchModal) {
+          closeCreateBatchModal();
+        }
+      });
+
+      batchListModal.addEventListener('click', (e) => {
+        if (e.target === batchListModal) {
+          closeBatchListModal();
+        }
+      });
+
+      batchDetailsModal.addEventListener('click', (e) => {
+        if (e.target === batchDetailsModal) {
+          closeBatchDetailsModal();
+        }
+      });
+
+                   // Inventory management buttons
+      document.getElementById('viewInventoryBtn').addEventListener('click', viewInventory);
+      document.getElementById('searchInventoryBtn').addEventListener('click', searchInventory);
+      document.getElementById('exportInventoryBtn').addEventListener('click', exportInventory);
+      document.getElementById('closeInventoryBtn').addEventListener('click', closeInventoryInline);
+      
+      // Batch management buttons
+      document.getElementById('createBatchBtn').addEventListener('click', showCreateBatchModal);
+      document.getElementById('viewBatchesBtn').addEventListener('click', showBatchListModal);
+      activeBatchBtn.addEventListener('click', () => {
+        if (activeBatch) {
+          showBatchDetailsModal(activeBatch.id);
+        }
+      });
      
            // Selection buttons
       document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedItems);

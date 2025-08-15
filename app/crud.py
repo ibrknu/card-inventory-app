@@ -1,129 +1,172 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select
-from datetime import datetime, timezone
-from typing import Union, List
+from sqlalchemy import func
 
-from . import models
+from . import models, schemas
 
 
-def get_item_by_id(db: Session, item_id: int) -> Union[models.Item, None]:
-    return db.get(models.Item, item_id)
+def get_item(db: Session, item_id: int):
+    return db.query(models.Item).filter(models.Item.id == item_id).first()
 
 
-def get_item_by_barcode(db: Session, barcode: str) -> Union[models.Item, None]:
-    if not barcode:
-        return None
-    stmt = select(models.Item).where(models.Item.barcode == barcode)
-    return db.execute(stmt).scalars().first()
+def get_item_by_barcode(db: Session, barcode: str):
+    return db.query(models.Item).filter(models.Item.barcode == barcode).first()
 
 
-def list_items(db: Session, limit: int = 500, offset: int = 0) -> List[models.Item]:
-    stmt = select(models.Item).offset(offset).limit(limit)
-    return list(db.execute(stmt).scalars().all())
+def get_items(db: Session, skip: int = 0, limit: int = 100, search: str = None):
+    query = db.query(models.Item)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            models.Item.name.ilike(search_term) |
+            models.Item.game.ilike(search_term) |
+            models.Item.set_name.ilike(search_term) |
+            models.Item.brand.ilike(search_term) |
+            models.Item.barcode.ilike(search_term)
+        )
+    return query.offset(skip).limit(limit).all()
 
 
-def search_items(db: Session, search_term: str, limit: int = 500, offset: int = 0) -> List[models.Item]:
-    """Search items by name, game, set_name, or barcode"""
-    from sqlalchemy import or_, func
-    
-    # Normalize search term (lowercase and remove extra spaces)
-    search_term = search_term.lower().strip()
-    
-    # Create search patterns for different variations
-    search_pattern = f"%{search_term}%"
-    
-    # Special handling for common game name variations
-    game_variations = []
-    if "pokemon" in search_term or "pokémon" in search_term:
-        game_variations.extend(["pokemon", "pokémon", "Pokemon", "Pokémon"])
-    if "magic" in search_term:
-        game_variations.extend(["magic", "Magic", "Magic: The Gathering", "MTG"])
-    if "yugioh" in search_term or "yu-gi-oh" in search_term:
-        game_variations.extend(["yugioh", "yu-gi-oh", "Yu-Gi-Oh!", "YuGiOh"])
-    
-    # Build the search conditions
-    conditions = [
-        models.Item.name.ilike(search_pattern),
-        models.Item.game.ilike(search_pattern),
-        models.Item.set_name.ilike(search_pattern),
-        models.Item.brand.ilike(search_pattern),
-        models.Item.barcode.ilike(search_pattern),
-        models.Item.description.ilike(search_pattern),
-        models.Item.notes.ilike(search_pattern)
-    ]
-    
-    # Add game variation conditions if we have any
-    for variation in game_variations:
-        conditions.append(models.Item.game.ilike(f"%{variation}%"))
-    
-    stmt = select(models.Item).where(or_(*conditions)).offset(offset).limit(limit)
-    
-    return list(db.execute(stmt).scalars().all())
-
-
-def create_item(
-    db: Session,
-    *,
-    barcode: Union[str, None],
-    name: Union[str, None] = None,
-    game: Union[str, None] = None,
-    set_name: Union[str, None] = None,
-    brand: Union[str, None] = None,
-    quantity: int = 0,
-    location: Union[str, None] = None,
-    notes: Union[str, None] = None,
-    price: Union[float, None] = None,
-    description: Union[str, None] = None,
-) -> models.Item:
-    item = models.Item(
-        barcode=barcode,
-        name=name,
-        game=game,
-        set_name=set_name,
-        brand=brand,
-        quantity=quantity,
-        location=location,
-        notes=notes,
-        price=price,
-        description=description,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    db.add(item)
+def create_item(db: Session, **kwargs):
+    db_item = models.Item(**kwargs)
+    db.add(db_item)
     db.commit()
-    db.refresh(item)
-    return item
+    db.refresh(db_item)
+    return db_item
 
 
-def update_item(db: Session, item: models.Item, **updates) -> models.Item:
-    for key, value in updates.items():
-        if value is not None and hasattr(item, key):
+def update_item(db: Session, item: models.Item, **kwargs):
+    for key, value in kwargs.items():
+        if hasattr(item, key):
             setattr(item, key, value)
-    item.updated_at = datetime.now(timezone.utc)
-    db.add(item)
     db.commit()
     db.refresh(item)
     return item
 
 
-def increment_item_quantity(db: Session, item: models.Item, by: int = 1) -> models.Item:
-    item.quantity = (item.quantity or 0) + by
-    item.updated_at = datetime.now(timezone.utc)
-    db.add(item)
+def delete_item(db: Session, item_id: int):
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    if item:
+        db.delete(item)
+        db.commit()
+    return item
+
+
+def increment_item_quantity(db: Session, item: models.Item, by: int = 1):
+    item.quantity += by
     db.commit()
     db.refresh(item)
     return item
 
 
-def create_scan_event(db: Session, barcode: str) -> models.ScanEvent:
-    event = models.ScanEvent(barcode=barcode, created_at=datetime.now(timezone.utc))
-    db.add(event)
+def create_scan_event(db: Session, barcode: str):
+    db_scan_event = models.ScanEvent(barcode=barcode)
+    db.add(db_scan_event)
     db.commit()
-    db.refresh(event)
-    return event
+    db.refresh(db_scan_event)
+    return db_scan_event
 
 
-def delete_item(db: Session, item: models.Item) -> None:
-    """Delete an item from the database"""
-    db.delete(item)
+# Batch CRUD operations
+def get_batch(db: Session, batch_id: int):
+    return db.query(models.Batch).filter(models.Batch.id == batch_id).first()
+
+
+def get_active_batches(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Batch).filter(models.Batch.is_active == True).offset(skip).limit(limit).all()
+
+
+def get_all_batches(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Batch).offset(skip).limit(limit).all()
+
+
+def create_batch(db: Session, **kwargs):
+    db_batch = models.Batch(**kwargs)
+    db.add(db_batch)
     db.commit()
+    db.refresh(db_batch)
+    return db_batch
+
+
+def update_batch(db: Session, batch: models.Batch, **kwargs):
+    for key, value in kwargs.items():
+        if hasattr(batch, key):
+            setattr(batch, key, value)
+    db.commit()
+    db.refresh(batch)
+    return batch
+
+
+def delete_batch(db: Session, batch_id: int):
+    batch = db.query(models.Batch).filter(models.Batch.id == batch_id).first()
+    if batch:
+        # Remove batch_id from all items in this batch
+        db.query(models.Item).filter(models.Item.batch_id == batch_id).update({"batch_id": None})
+        db.delete(batch)
+        db.commit()
+    return batch
+
+
+def add_item_to_batch(db: Session, barcode: str, batch_id: int, quantity: int = 1):
+    """Add an item to a batch and update its location to the batch target location"""
+    item = get_item_by_barcode(db, barcode)
+    if not item:
+        return None
+    
+    batch = get_batch(db, batch_id)
+    if not batch or not batch.is_active:
+        return None
+    
+    # Update item to be part of the batch and set location to batch target
+    item.batch_id = batch_id
+    item.location = batch.target_location
+    item.quantity += quantity
+    
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def transfer_batch_items(db: Session, batch_id: int):
+    """Transfer all items in a batch to their target location and remove from batch"""
+    batch = get_batch(db, batch_id)
+    if not batch:
+        return None
+    
+    # Update all items in the batch to have the target location and remove batch_id
+    items_updated = db.query(models.Item).filter(models.Item.batch_id == batch_id).update({
+        "location": batch.target_location,
+        "batch_id": None
+    })
+    
+    # Deactivate the batch
+    batch.is_active = False
+    
+    db.commit()
+    return {"batch": batch, "items_transferred": items_updated}
+
+
+def cancel_batch(db: Session, batch_id: int):
+    """Cancel a batch by removing batch_id from all items"""
+    batch = get_batch(db, batch_id)
+    if not batch:
+        return None
+    
+    # Remove batch_id from all items in this batch
+    items_updated = db.query(models.Item).filter(models.Item.batch_id == batch_id).update({"batch_id": None})
+    
+    # Deactivate the batch
+    batch.is_active = False
+    
+    db.commit()
+    return {"batch": batch, "items_removed": items_updated}
+
+
+def get_batch_items(db: Session, batch_id: int):
+    """Get all items in a specific batch"""
+    return db.query(models.Item).filter(models.Item.batch_id == batch_id).all()
+
+
+def get_batch_stats(db: Session, batch_id: int):
+    """Get statistics for a batch including item count"""
+    item_count = db.query(func.count(models.Item.id)).filter(models.Item.batch_id == batch_id).scalar()
+    return {"item_count": item_count}
