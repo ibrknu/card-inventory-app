@@ -427,10 +427,9 @@
        <h3 id="inventoryTitle">My Card Inventory</h3>
        <p class="muted" id="inventoryCount">0 items found</p>
        
-       <div class="inventory-controls" style="margin-bottom: 12px;">
-         <button id="selectAllBtn" class="secondary" style="margin-right: 8px;">☐ Select All</button>
-         <button id="deleteSelectedBtn" class="danger" style="display: none;">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button>
-       </div>
+               <div class="inventory-controls" style="margin-bottom: 12px;">
+          <button id="deleteSelectedBtn" class="danger" style="display: none;">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button>
+        </div>
        
        <div id="inventoryList" class="inventory-list">
          <!-- Inventory items will be displayed here -->
@@ -611,13 +610,16 @@
 
          let codeReader = null;
      let currentStream = null;
-     let lastText = '';
-     let lastAt = 0;
-     let pendingBarcode = null;
-     let isScanning = false;
-     let selectedItems = new Set();
-     let allItems = [];
-     let debugMode = false;
+           let lastText = '';
+      let lastAt = 0;
+      let pendingBarcode = null;
+      let isScanning = false;
+      let selectedItems = new Set();
+      let allItems = [];
+      let debugMode = false;
+      let lastProcessedBarcode = '';
+      let lastProcessedTime = 0;
+      const BARCODE_COOLDOWN_MS = 3000; // 3 second cooldown between same barcode scans
     
     
 
@@ -1100,25 +1102,41 @@
              return;
            }
            
-           // Use the cleaned code if available
-           const finalCode = validation.cleanCode || code;
-           
-           const now = Date.now();
-           // Deduplicate rapid repeats
-           if (finalCode && (finalCode !== lastText || now - lastAt > 1500)) {
-             lastText = finalCode;
-             lastAt = now;
-             
-             console.log('Processing barcode:', finalCode, 'confidence:', confidence, 'format:', format, 'validation:', validation);
-             postScan(finalCode);
-             showToast(`Barcode detected: ${finalCode} (${Math.round(confidence * 100)}% confidence)`, 'success');
-             
-             // Add visual feedback
-             video.style.border = '3px solid #4CAF50';
-             setTimeout(() => {
-               video.style.border = '';
-             }, 2000);
-           }
+                       // Use the cleaned code if available
+            const finalCode = validation.cleanCode || code;
+            
+            const now = Date.now();
+            
+            // Check if this is the same barcode as the last processed one
+            if (finalCode === lastProcessedBarcode) {
+              const timeSinceLastProcess = now - lastProcessedTime;
+              if (timeSinceLastProcess < BARCODE_COOLDOWN_MS) {
+                const remainingTime = Math.ceil((BARCODE_COOLDOWN_MS - timeSinceLastProcess) / 1000);
+                console.log(`Same barcode detected too soon: ${finalCode}, cooldown active (${remainingTime}s remaining)`);
+                showToast(`Same barcode detected. Please wait ${remainingTime} second${remainingTime !== 1 ? 's' : ''} before scanning again.`, 'warning');
+                return;
+              }
+            }
+            
+            // Deduplicate rapid repeats (general deduplication)
+            if (finalCode && (finalCode !== lastText || now - lastAt > 1500)) {
+              lastText = finalCode;
+              lastAt = now;
+              
+              // Update the last processed barcode and time
+              lastProcessedBarcode = finalCode;
+              lastProcessedTime = now;
+              
+              console.log('Processing barcode:', finalCode, 'confidence:', confidence, 'format:', format, 'validation:', validation);
+              postScan(finalCode);
+              showToast(`Barcode detected: ${finalCode} (${Math.round(confidence * 100)}% confidence)`, 'success');
+              
+              // Add visual feedback
+              video.style.border = '3px solid #4CAF50';
+              setTimeout(() => {
+                video.style.border = '';
+              }, 2000);
+            }
          });
          
          showToast('Scanner started successfully!', 'success');
@@ -1177,12 +1195,28 @@
        }
      });
     
-    manualBtn.addEventListener('click', () => {
-      const val = (manualInput.value || '').trim();
-      if (!val) return showToast('Enter a barcode', 'error');
-      postScan(val);
-      manualInput.value = '';
-    });
+         manualBtn.addEventListener('click', () => {
+       const val = (manualInput.value || '').trim();
+       if (!val) return showToast('Enter a barcode', 'error');
+       
+       // Check cooldown for manual entry too
+       const now = Date.now();
+       if (val === lastProcessedBarcode) {
+         const timeSinceLastProcess = now - lastProcessedTime;
+         if (timeSinceLastProcess < BARCODE_COOLDOWN_MS) {
+           const remainingTime = Math.ceil((BARCODE_COOLDOWN_MS - timeSinceLastProcess) / 1000);
+           showToast(`Same barcode detected. Please wait ${remainingTime} second${remainingTime !== 1 ? 's' : ''} before adding again.`, 'warning');
+           return;
+         }
+       }
+       
+       // Update the last processed barcode and time
+       lastProcessedBarcode = val;
+       lastProcessedTime = now;
+       
+       postScan(val);
+       manualInput.value = '';
+     });
 
          newItemForm.addEventListener('submit', async (e) => {
        e.preventDefault();
@@ -1277,9 +1311,8 @@
      document.getElementById('exportInventoryBtn').addEventListener('click', exportInventory);
      document.getElementById('closeInventoryBtn').addEventListener('click', closeInventoryInline);
      
-     // Selection buttons
-     document.getElementById('selectAllBtn').addEventListener('click', toggleSelectAll);
-     document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedItems);
+           // Selection buttons
+      document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedItems);
      
      // Refresh button
      document.getElementById('refreshBtn').addEventListener('click', () => {
@@ -1395,22 +1428,20 @@
         allItems = items;
         selectedItems.clear();
         
-        // Get the inventory section elements
-        const inventorySection = document.getElementById('inventorySection');
-        const inventoryTitle = document.getElementById('inventoryTitle');
-        const inventoryCount = document.getElementById('inventoryCount');
-        const inventoryList = document.getElementById('inventoryList');
-        const selectAllBtn = document.getElementById('selectAllBtn');
-        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-        
-        // Update the title and count
-        inventoryTitle.textContent = title;
-        inventoryCount.textContent = `${items.length} items found`;
-        
-        // Reset selection controls
-        selectAllBtn.textContent = '☐ Select All';
-        deleteSelectedBtn.style.display = 'none';
-        document.getElementById('selectedCount').textContent = '0';
+                 // Get the inventory section elements
+         const inventorySection = document.getElementById('inventorySection');
+         const inventoryTitle = document.getElementById('inventoryTitle');
+         const inventoryCount = document.getElementById('inventoryCount');
+         const inventoryList = document.getElementById('inventoryList');
+         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+         
+         // Update the title and count
+         inventoryTitle.textContent = title;
+         inventoryCount.textContent = `${items.length} items found`;
+         
+         // Reset selection controls
+         deleteSelectedBtn.style.display = 'none';
+         document.getElementById('selectedCount').textContent = '0';
         
         // Clear the list and add items
         inventoryList.innerHTML = '';
@@ -1479,49 +1510,20 @@
         updateSelectionUI();
       }
 
-      function toggleSelectAll() {
-        const selectAllBtn = document.getElementById('selectAllBtn');
-        const checkboxes = document.querySelectorAll('.item-checkbox');
-        const itemElements = document.querySelectorAll('.inventory-item');
-        
-        if (selectedItems.size === allItems.length) {
-          // Deselect all
-          selectedItems.clear();
-          checkboxes.forEach(checkbox => checkbox.checked = false);
-          itemElements.forEach(item => item.classList.remove('selected'));
-          selectAllBtn.textContent = '☐ Select All';
-        } else {
-          // Select all
-          selectedItems.clear();
-          allItems.forEach(item => selectedItems.add(item.id));
-          checkboxes.forEach(checkbox => checkbox.checked = true);
-          itemElements.forEach(item => item.classList.add('selected'));
-          selectAllBtn.textContent = '☑ Deselect All';
-        }
-        
-        updateSelectionUI();
-      }
+      
 
-      function updateSelectionUI() {
-        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-        const selectAllBtn = document.getElementById('selectAllBtn');
-        const selectedCount = document.getElementById('selectedCount');
-        
-        selectedCount.textContent = selectedItems.size;
-        
-        if (selectedItems.size > 0) {
-          deleteSelectedBtn.style.display = 'inline-block';
-        } else {
-          deleteSelectedBtn.style.display = 'none';
-        }
-        
-        // Update select all button text
-        if (selectedItems.size === allItems.length && allItems.length > 0) {
-          selectAllBtn.textContent = '☑ Deselect All';
-        } else {
-          selectAllBtn.textContent = '☐ Select All';
-        }
-      }
+             function updateSelectionUI() {
+         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+         const selectedCount = document.getElementById('selectedCount');
+         
+         selectedCount.textContent = selectedItems.size;
+         
+         if (selectedItems.size > 0) {
+           deleteSelectedBtn.style.display = 'inline-block';
+         } else {
+           deleteSelectedBtn.style.display = 'none';
+         }
+       }
 
       async function deleteSelectedItems() {
         if (selectedItems.size === 0) {
