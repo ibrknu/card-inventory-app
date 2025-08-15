@@ -201,16 +201,13 @@
     .mb-2 { margin-bottom: 8px; }
     .mb-4 { margin-bottom: 16px; }
   </style>
-  <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script>
-    // Fallback ZXing library if the main one fails to load
-    if (typeof ZXing === 'undefined') {
-      console.log('Primary ZXing library failed to load, trying fallback...');
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@zxing/library@0.19.6';
-      script.onload = () => console.log('Fallback ZXing library loaded successfully');
-      script.onerror = () => console.error('All ZXing library versions failed to load');
-      document.head.appendChild(script);
+    // Check if QuaggaJS loaded successfully
+    if (typeof Quagga === 'undefined') {
+      console.error('QuaggaJS library failed to load');
+    } else {
+      console.log('QuaggaJS library loaded successfully');
     }
   </script>
 </head>
@@ -382,6 +379,7 @@
     let lastAt = 0;
     let pendingBarcode = null;
     let debugVisible = false;
+    let isScanning = false;
     
     // Frame data tracking
     let frameStats = {
@@ -531,30 +529,22 @@
       showToast(`Exported complete frame statistics`, 'success');
     }
     
-    // Test ZXing library on page load
-    function testZXingLibrary() {
-      console.log('Testing ZXing library...');
-      if (typeof ZXing === 'undefined') {
-        console.error('ZXing library not loaded');
+    // Test QuaggaJS library on page load
+    function testQuaggaLibrary() {
+      console.log('Testing QuaggaJS library...');
+      if (typeof Quagga === 'undefined') {
+        console.error('QuaggaJS library not loaded');
         showToast('Barcode library not loaded!', 'error');
         return false;
       }
       
-      if (typeof ZXing.BrowserMultiFormatReader === 'undefined') {
-        console.error('BrowserMultiFormatReader not available');
-        showToast('Barcode reader not available!', 'error');
-        return false;
-      }
-      
-      // Test if we can create an instance
+      // Test if we can access Quagga methods
       try {
-        const testReader = new ZXing.BrowserMultiFormatReader();
-        console.log('ZXing library loaded successfully');
-        console.log('Available ZXing classes:', Object.keys(ZXing));
-        console.log('BrowserMultiFormatReader methods:', Object.getOwnPropertyNames(testReader));
+        console.log('QuaggaJS library loaded successfully');
+        console.log('Available Quagga methods:', Object.getOwnPropertyNames(Quagga));
         return true;
       } catch (e) {
-        console.error('Failed to create BrowserMultiFormatReader instance:', e);
+        console.error('Failed to access QuaggaJS methods:', e);
         showToast('Barcode reader initialization failed!', 'error');
         return false;
       }
@@ -564,8 +554,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       console.log('Page loaded, initializing...');
       
-      // Test ZXing library
-      if (!testZXingLibrary()) {
+      // Test QuaggaJS library
+      if (!testQuaggaLibrary()) {
         return;
       }
       
@@ -597,7 +587,7 @@
     });
 
     function isScannerRunning() {
-      return codeReader && codeReader.isScanning !== false;
+      return isScanning;
     }
     
     function updateDebugInfo() {
@@ -870,7 +860,7 @@
     }
 
     async function startScanning() {
-      if (codeReader) {
+      if (isScanning) {
         showToast('Scanner already running!', 'warning');
         return;
       }
@@ -880,262 +870,123 @@
         return;
       }
       
-      // Check if ZXing library is loaded
-      if (typeof ZXing === 'undefined') {
+      // Check if QuaggaJS library is loaded
+      if (typeof Quagga === 'undefined') {
         showToast('Barcode library not loaded. Please refresh the page.', 'error');
-        console.error('ZXing library not available');
-        return;
-      }
-      
-      if (typeof ZXing.BrowserMultiFormatReader === 'undefined') {
-        showToast('Barcode reader not available. Please refresh the page.', 'error');
-        console.error('BrowserMultiFormatReader not available');
-        return;
-      }
-
-      // Compatibility check for required methods
-      try {
-        const testReader = new ZXing.BrowserMultiFormatReader();
-        const requiredMethods = ['decodeFromVideoElement', 'reset'];
-        const missingMethods = requiredMethods.filter(method => typeof testReader[method] !== 'function');
-        
-        if (missingMethods.length > 0) {
-          showToast(`Scanner incompatible: Missing methods: ${missingMethods.join(', ')}`, 'error');
-          console.error('Missing required methods:', missingMethods);
-          return;
-        }
-        
-        // Check if decodeFromVideoElement exists and is callable
-        if (typeof testReader.decodeFromVideoElement !== 'function') {
-          showToast('Scanner incompatible: decodeFromVideoElement method not available', 'error');
-          console.error('decodeFromVideoElement method not available');
-          return;
-        }
-        
-        // Log method signature for debugging
-        console.log('decodeFromVideoElement method signature:', testReader.decodeFromVideoElement.length, 'parameters');
-        console.log('decodeFromVideoElement method:', testReader.decodeFromVideoElement.toString().substring(0, 100) + '...');
-        console.log('ZXing library version info:', {
-          BrowserMultiFormatReader: typeof ZXing.BrowserMultiFormatReader,
-          decodeFromVideoElement: typeof testReader.decodeFromVideoElement,
-          methodLength: testReader.decodeFromVideoElement.length
-        });
-        
-        // Check for alternative methods if decodeFromVideoElement has issues
-        const alternativeMethods = ['decodeFromConstraints', 'decodeFromStream', 'decodeFromVideoDevice'];
-        const availableAlternatives = alternativeMethods.filter(method => typeof testReader[method] === 'function');
-        if (availableAlternatives.length > 0) {
-          console.log('Available alternative methods:', availableAlternatives);
-        }
-        
-        console.log('Compatibility check passed');
-      } catch (e) {
-        showToast('Scanner compatibility check failed: ' + e.message, 'error');
-        console.error('Compatibility check failed:', e);
+        console.error('QuaggaJS library not available');
         return;
       }
 
       try {
-        console.log('Starting scanning process...');
+        console.log('Starting QuaggaJS scanner...');
         showToast('Starting scanner...', 'warning');
         
-        // Check if we already have a video stream
-        if (!video.srcObject || !currentStream) {
-          showToast('Please test video first, then start scanning.', 'error');
-          return;
-        }
+        // Initialize frame stats
+        frameStats.startTime = Date.now();
+        frameStats.totalFrames = 0;
+        frameStats.successfulScans = 0;
+        frameStats.failedScans = 0;
+        frameStats.frameQuality = [];
         
-        // Initialize the barcode reader
-        console.log('Initializing barcode reader...');
-        codeReader = new ZXing.BrowserMultiFormatReader();
-        
-        // Start decoding from the existing video element
-        console.log('Starting barcode decoding from video element...');
-        console.log('Video element:', video);
-        console.log('Video srcObject:', video.srcObject);
-        console.log('Video readyState:', video.readyState);
-        console.log('Video videoWidth:', video.videoWidth);
-        console.log('Video videoHeight:', video.videoHeight);
-        
-        // Add a small delay to ensure video is fully ready
-        setTimeout(() => {
-          console.log('Starting barcode detection...');
-          
-          // Add frame processing indicator
-          let frameCount = 0;
-          const frameInterval = setInterval(() => {
-            frameCount++;
-            if (frameCount % 30 === 0) { // Log every 30 frames (about once per second)
-              console.log(`Scanner processing frames: ${frameCount} frames processed`);
+        // Configure QuaggaJS
+        Quagga.init({
+          inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: video,
+            constraints: {
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 },
+              facingMode: "environment", // Use back camera on mobile
+              aspectRatio: { min: 1, max: 2 }
+            },
+            area: { // Only read barcodes in center 80% of the video
+              top: "10%",
+              right: "10%",
+              left: "10%",
+              bottom: "10%"
             }
-          }, 33); // ~30fps
-          
-          // Debug: Log available methods on codeReader
-          console.log('Available codeReader methods:', Object.getOwnPropertyNames(codeReader));
-          console.log('codeReader prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(codeReader)));
-          
-          // Test different decoding methods
-          console.log('Testing decodeFromImage method:', typeof codeReader.decodeFromImage);
-          console.log('Testing decodeFromCanvas method:', typeof codeReader.decodeFromCanvas);
-          console.log('Testing decodeFromVideoElement method:', typeof codeReader.decodeFromVideoElement);
-          
-          // Try to get more detailed method info
-          if (codeReader.decodeFromImage) {
-            console.log('decodeFromImage method signature:', codeReader.decodeFromImage.length, 'parameters');
-            console.log('decodeFromImage toString:', codeReader.decodeFromImage.toString().substring(0, 150));
+          },
+          decoder: {
+            readers: [
+              "code_128_reader",
+              "ean_reader",
+              "ean_8_reader",
+              "code_39_reader",
+              "code_39_vin_reader",
+              "codabar_reader",
+              "upc_reader",
+              "upc_e_reader",
+              "i2of5_reader"
+            ],
+            multiple: false, // Only return one result at a time
+            debug: {
+              showCanvas: false,
+              showPatches: false,
+              showFoundPatches: false,
+              showSkeleton: false,
+              showLabels: false,
+              showPatchLabels: false,
+              showRemainingPatchLabels: false,
+              boxFromPatches: {
+                showTransformed: false,
+                showTransformedBox: false,
+                showBB: false
+              }
+            }
+          },
+          locate: true,
+          frequency: 10 // Scan every 10 frames
+        }, function(err) {
+          if (err) {
+            console.error('QuaggaJS initialization failed:', err);
+            showToast('Scanner initialization failed: ' + err.message, 'error');
+            return;
           }
           
-          // Start continuous scanning with a more robust approach
-          console.log('Starting continuous barcode scanning...');
+          console.log('QuaggaJS initialized successfully');
+          showToast('Scanner started successfully!', 'success');
+          isScanning = true;
           
-          // Initialize frame stats
-          frameStats.startTime = Date.now();
-          frameStats.totalFrames = 0;
-          frameStats.successfulScans = 0;
-          frameStats.failedScans = 0;
-          frameStats.frameQuality = [];
+          // Start scanning
+          Quagga.start();
           
-          // Use a polling approach that's more reliable than ZXing's built-in methods
-          let isScanning = true;
-          let scanCount = 0;
-          const scanInterval = setInterval(async () => {
-            if (!isScanning || !codeReader || !video.srcObject) {
-              clearInterval(scanInterval);
-              return;
-            }
-            
-            scanCount++;
-            frameStats.totalFrames++;
-            
-            if (scanCount % 10 === 0) { // Log every 10 scans (about every 5 seconds)
-              console.log(`Scanner active: ${scanCount} scans performed`);
-              console.log(`Frame stats: Total: ${frameStats.totalFrames}, Success: ${frameStats.successfulScans}, Failed: ${frameStats.failedScans}`);
-            }
-            
-            try {
-              // Capture current frame
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              
-              // Draw current video frame
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              
-              // Analyze frame quality
-              const quality = analyzeFrameQuality(canvas);
-              frameStats.frameQuality.push(quality);
-              
-              // Keep only last 100 quality measurements to prevent memory issues
-              if (frameStats.frameQuality.length > 100) {
-                frameStats.frameQuality.shift();
-              }
-              
-              // Try to decode the frame using multiple methods
-              let decodeResult = null;
-              
-              // Method 1: Try decodeFromImage (most reliable for canvas)
-              if (typeof codeReader.decodeFromImage === 'function') {
-                try {
-                  decodeResult = await codeReader.decodeFromImage(canvas);
-                  if (decodeResult) {
-                    console.log('Barcode detected via decodeFromImage:', decodeResult.getText());
-                  }
-                } catch (e) {
-                  if (e.name !== 'NotFoundException') {
-                    console.log('decodeFromImage error:', e.name, e.message);
-                  }
-                }
-              }
-              
-              // Method 2: Try decodeFromCanvas if available
-              if (!decodeResult && typeof codeReader.decodeFromCanvas === 'function') {
-                try {
-                  decodeResult = await codeReader.decodeFromCanvas(canvas);
-                  if (decodeResult) {
-                    console.log('Barcode detected via decodeFromCanvas:', decodeResult.getText());
-                  }
-                } catch (e) {
-                  if (e.name !== 'NotFoundException') {
-                    console.log('decodeFromCanvas error:', e.name, e.message);
-                  }
-                }
-              }
-              
-              // Method 3: Try decodeFromVideoElement with a single frame
-              if (!decodeResult && typeof codeReader.decodeFromVideoElement === 'function') {
-                try {
-                  // Create a temporary video element with the current frame
-                  const tempVideo = document.createElement('video');
-                  tempVideo.srcObject = video.srcObject;
-                  tempVideo.currentTime = video.currentTime;
-                  
-                  decodeResult = await new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => reject(new Error('Timeout')), 1000);
-                    codeReader.decodeFromVideoElement(tempVideo, (result, error) => {
-                      clearTimeout(timeout);
-                      if (error && error.name !== 'NotFoundException') {
-                        reject(error);
-                      } else {
-                        resolve(result);
-                      }
-                    });
-                  });
-                  
-                  if (decodeResult) {
-                    console.log('Barcode detected via decodeFromVideoElement:', decodeResult.getText());
-                  }
-                } catch (e) {
-                  if (e.name !== 'NotFoundException') {
-                    console.log('decodeFromVideoElement error:', e.name, e.message);
-                  }
-                }
-              }
-              
-              // Process result if any method succeeded
-              if (decodeResult) {
-                const text = decodeResult.getText();
-                console.log('Barcode detected via polling:', text);
-                console.log('Frame quality at detection:', quality);
-                
-                const now = Date.now();
-                // Deduplicate rapid repeats
-                if (text && (text !== lastText || now - lastAt > 1500)) {
-                  lastText = text; 
-                  lastAt = now;
-                  frameStats.lastScanTime = now;
-                  frameStats.successfulScans++;
-                  
-                  postScan(text);
-                  showToast(`Barcode detected: ${text}`, 'success');
-                  
-                  // Add visual feedback
-                  video.style.border = '3px solid #4CAF50';
-                  setTimeout(() => {
-                    video.style.border = '';
-                  }, 2000);
-                }
-              } else {
-                // No barcode found - this is normal
-                frameStats.failedScans++;
-              }
-            } catch (e) {
-              console.log('Frame capture error:', e);
-              frameStats.failedScans++;
-            }
-          }, 500); // Check every 500ms
+          // Add visual feedback
+          video.classList.add('testing');
+          video.classList.remove('error');
+        });
+        
+        // Handle successful scans
+        Quagga.onDetected(function(result) {
+          const code = result.codeResult.code;
+          console.log('Barcode detected:', code);
           
-          // Store the interval for cleanup
-          if (codeReader) {
-            codeReader.scanInterval = scanInterval;
-            codeReader.isScanning = true;
+          const now = Date.now();
+          // Deduplicate rapid repeats
+          if (code && (code !== lastText || now - lastAt > 1500)) {
+            lastText = code;
+            lastAt = now;
+            frameStats.lastScanTime = now;
+            frameStats.successfulScans++;
+            
+            postScan(code);
+            showToast(`Barcode detected: ${code}`, 'success');
+            
+            // Add visual feedback
+            video.style.border = '3px solid #4CAF50';
+            setTimeout(() => {
+              video.style.border = '';
+            }, 2000);
           }
-          
-          // Store the interval for cleanup
-          if (codeReader) {
-            codeReader.frameInterval = frameInterval;
+        });
+        
+        // Handle processing events for frame statistics
+        Quagga.onProcessed(function(result) {
+          frameStats.totalFrames++;
+          if (!result) {
+            frameStats.failedScans++;
           }
-        }, 500);
+        });
         
         showToast('Scanner started successfully!', 'success');
         console.log('Scanning started successfully');
@@ -1148,27 +999,14 @@
     }
 
     async function stopScanning() {
-      if (codeReader) {
+      if (isScanning) {
         try {
-          // Stop the scanning loop
-          if (codeReader.isScanning !== undefined) {
-            codeReader.isScanning = false;
-          }
+          // Stop QuaggaJS
+          Quagga.stop();
+          isScanning = false;
           
-          // Clear the scan interval if it exists
-          if (codeReader.scanInterval) {
-            clearInterval(codeReader.scanInterval);
-            codeReader.scanInterval = null;
-          }
-          
-          // Clear the frame interval if it exists (legacy)
-          if (codeReader.frameInterval) {
-            clearInterval(codeReader.frameInterval);
-            codeReader.frameInterval = null;
-          }
-          
-          await codeReader.reset();
-          codeReader = null;
+          // Remove visual feedback
+          video.classList.remove('testing', 'error');
           
           // Log final frame statistics
           if (frameStats.startTime) {
@@ -1206,6 +1044,7 @@
     async function restartVideo() {
       console.log('Restarting video stream...');
       showToast('Restarting video stream...', 'warning');
+      await stopScanning(); // Stop scanning first
       await stopVideo(); // Stop the current stream
       await requestCameraPermission(); // Request permission again
       await startScanning(); // Start scanning with the new stream
@@ -1271,101 +1110,49 @@
         
         console.log('Frame captured, dimensions:', canvas.width, 'x', canvas.height);
         
-        // Try different decoding methods
-        let decodeResult = null;
-        
-        // Method 1: Try decodeFromImage (most common)
-        if (codeReader && typeof codeReader.decodeFromImage === 'function') {
-          try {
-            console.log('Trying decodeFromImage...');
-            decodeResult = await codeReader.decodeFromImage(canvas);
-            console.log('decodeFromImage result:', decodeResult);
-          } catch (e) {
-            console.log('decodeFromImage failed:', e);
-          }
-        }
-        
-        // Method 2: Try decodeFromCanvas if available
-        if (!decodeResult && codeReader && typeof codeReader.decodeFromCanvas === 'function') {
-          try {
-            console.log('Trying decodeFromCanvas...');
-            decodeResult = await codeReader.decodeFromCanvas(canvas);
-            console.log('decodeFromCanvas result:', decodeResult);
-          } catch (e) {
-            console.log('decodeFromCanvas failed:', e);
-          }
-        }
-        
-        // Method 3: Try decodeFromVideoElement with a single frame
-        if (!decodeResult && codeReader && typeof codeReader.decodeFromVideoElement === 'function') {
-          try {
-            console.log('Trying decodeFromVideoElement with single frame...');
-            // Create a temporary video element with the captured frame
-            const tempVideo = document.createElement('video');
-            tempVideo.width = canvas.width;
-            tempVideo.height = canvas.height;
-            
-            // Convert canvas to blob and create video source
-            canvas.toBlob(async (blob) => {
-              const videoUrl = URL.createObjectURL(blob);
-              tempVideo.src = videoUrl;
-              tempVideo.onloadeddata = async () => {
-                try {
-                  const result = await codeReader.decodeFromVideoElement(tempVideo);
-                  if (result) {
-                    const text = result.getText();
-                    console.log('Single frame decode successful:', text);
-                    showToast(`Barcode detected: ${text}`, 'success');
-                    postScan(text);
-                  } else {
-                    showToast('No barcode found in captured frame', 'warning');
-                  }
-                } catch (e) {
-                  console.log('Single frame decode failed:', e);
-                  showToast('Manual decode failed: ' + e.message, 'error');
-                } finally {
-                  URL.revokeObjectURL(videoUrl);
-                }
-              };
-            }, 'image/jpeg');
-            return; // Exit early since this is async
-          } catch (e) {
-            console.log('Single frame decode setup failed:', e);
-          }
-        }
-        
-        // Method 4: Try direct canvas decode with different ZXing methods
-        if (!decodeResult && codeReader) {
-          const alternativeMethods = ['decodeFromCanvas', 'decodeFromImageElement'];
-          for (const method of alternativeMethods) {
-            if (typeof codeReader[method] === 'function') {
-              try {
-                console.log(`Trying ${method}...`);
-                const result = await codeReader[method](canvas);
-                if (result) {
-                  decodeResult = result;
-                  console.log(`${method} successful:`, result);
-                  break;
-                }
-              } catch (e) {
-                console.log(`${method} failed:`, e);
+        // Use QuaggaJS to decode the captured frame
+        try {
+          const result = await new Promise((resolve, reject) => {
+            Quagga.decodeSingle({
+              src: canvas.toDataURL(),
+              numOfWorkers: 0,
+              inputStream: {
+                size: 800
+              },
+              decoder: {
+                readers: [
+                  "code_128_reader",
+                  "ean_reader",
+                  "ean_8_reader",
+                  "code_39_reader",
+                  "code_39_vin_reader",
+                  "codabar_reader",
+                  "upc_reader",
+                  "upc_e_reader",
+                  "i2of5_reader"
+                ]
+              },
+              locate: true
+            }, function(result) {
+              if (result && result.codeResult) {
+                resolve(result);
+              } else {
+                reject(new Error('No barcode found'));
               }
-            }
-          }
-        }
-        
-        // Check if any method worked
-        if (decodeResult) {
-          const text = decodeResult.getText();
-          console.log('Manual decode successful:', text);
-          showToast(`Barcode detected: ${text}`, 'success');
-          postScan(text);
-        } else {
-          console.log('All decode methods failed');
+            });
+          });
+          
+          const code = result.codeResult.code;
+          console.log('Manual decode successful:', code);
+          showToast(`Barcode detected: ${code}`, 'success');
+          postScan(code);
+          
+        } catch (e) {
+          console.log('Manual decode failed:', e);
           showToast('No barcode found in captured frame', 'warning');
         }
         
-        // Check if video stream is still working after capture (less aggressive)
+        // Check if video stream is still working after capture
         setTimeout(async () => {
           if (!video.srcObject || video.readyState === 0) {
             console.log('Video stream interrupted after capture, attempting recovery...');
